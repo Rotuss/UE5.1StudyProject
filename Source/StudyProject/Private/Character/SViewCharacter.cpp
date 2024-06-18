@@ -15,6 +15,9 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Animation/SAnimInstance.h"
 
+int32 ASViewCharacter::ShowAttackDebug = 0;
+FAutoConsoleVariableRef CVarShowAttackDebug(TEXT("StudyProject.ShowAttackDebug"), ASViewCharacter::ShowAttackDebug, TEXT(""), ECVF_Cheat);
+
 ASViewCharacter::ASViewCharacter()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -41,7 +44,7 @@ void ASViewCharacter::BeginPlay()
     if (true == IsValid(AnimInstance))
     {
         AnimInstance->OnMontageEnded.AddDynamic(this, &ThisClass::OnMeleeAttackMontageEnded);
-        AnimInstance->OnCheckHit.AddDynamic(this, &ThisClass::OnCheckHit);
+        //AnimInstance->OnCheckHit.AddDynamic(this, &ThisClass::OnCheckHit);
         AnimInstance->OnCheckAttackInput.AddDynamic(this, &ThisClass::OnCheckAttackInput);
     }
 }
@@ -106,7 +109,61 @@ void ASViewCharacter::OnMeleeAttackMontageEnded(UAnimMontage* Montage, bool bInt
 
 void ASViewCharacter::OnCheckHit()
 {
-    UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("CheckHit() has been called.")));
+    //UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("CheckHit() has been called.")));
+
+    FHitResult HitResult;
+    // 매개변수: 태그명, 복잡한 콜리전 구조 사용할 것인지(0, 1), 무시될 액터(this를 한 이유는 자신의 공격에 자신이 당하지 않기 위함)
+    FCollisionQueryParams Params(NAME_None, false, this);
+
+    // Sweep: 처리대상, Single: 개수, ByChannel: 어떤걸 기준으로 검사?
+    bool bResult = GetWorld()->SweepSingleByChannel(
+        HitResult,                                                          // 충돌된 정보가 담기는 구조체 변수
+        GetActorLocation(),                                                 // 충돌 탐지시작점
+        GetActorLocation() + MeleeAttackRange * GetActorForwardVector(),    // 충돌 탐지 끝지점
+        FQuat::Identity,                                                    // 탐색 도형의 회전
+        ECC_GameTraceChannel2,                                              // 충돌 감지 채널
+        FCollisionShape::MakeSphere(MeleeAttackRadius),                     // 특정 사이즈의 모양으로 충돌 감지
+        Params                                                              // 탐색 방법에 대한 설정 구조체 변수
+    );
+
+    // 충돌이 된 경우
+    /*if (true == bResult)
+    {
+        if (true == IsValid(HitResult.GetActor()))
+        {
+            UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("Hit Actor Name: %s"), *HitResult.GetActor()->GetName()));
+        }
+    }*/
+#pragma region CollisionDebugDrawing
+    if (1 == ShowAttackDebug)
+    {
+        FVector TraceVector = MeleeAttackRange * GetActorForwardVector();
+        FVector Center = GetActorLocation() + TraceVector + GetActorUpVector() * 40.0f;
+        float HalfHeight = MeleeAttackRange * 0.5f + MeleeAttackRadius;
+        FQuat CapsuleRot = FRotationMatrix::MakeFromZ(TraceVector).ToQuat();
+        FColor DrawColor = true == bResult ? FColor::Green : FColor::Red;
+        float DebugLifeTime = 5.0f;
+
+        DrawDebugCapsule(
+            GetWorld(),
+            Center,                 // 시작 지점
+            HalfHeight,             // 캡슐의 절반 높이
+            MeleeAttackRadius,      // 반지름
+            CapsuleRot,             // 어느쪽으로 회전?
+            DrawColor,              // 충돌X: 빨강, 충돌O: 초록 (위 변수에서 설정한 것)
+            false, 
+            DebugLifeTime           // 지속시간
+        );
+
+        if (true == bResult)
+        {
+            if (true == IsValid(HitResult.GetActor()))
+            {
+                UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("Hit Actor Name: %s"), *HitResult.GetActor()->GetName()));
+            }
+        }
+    }
+#pragma endregion
 }
 
 void ASViewCharacter::OnCheckAttackInput()

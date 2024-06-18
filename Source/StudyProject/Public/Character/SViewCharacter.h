@@ -58,6 +58,10 @@ public:
 protected:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
+public:
+	// 런타임 콘솔 디버깅용 변수
+	static int32 ShowAttackDebug;
+
 private:
 	UFUNCTION()
 	void OnCheckAttackInput();
@@ -98,6 +102,12 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	float RightInputValue;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack", meta = (AllowPrivateAccess))
+	float MeleeAttackRange = 50.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack", meta = (AllowPrivateAccess))
+	float MeleeAttackRadius = 20.0f;
 
 	FOnMontageEnded OnMeleeAttackMontageEndedDelegate;
 
