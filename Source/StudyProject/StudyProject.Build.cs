@@ -7,10 +7,20 @@ public class StudyProject : ModuleRules
 	public StudyProject(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+        PublicDependencyModuleNames.AddRange(new string[]
+        { 
+			// Init
+			"Core", "CoreUObject", "Engine", "InputCore",
+
+			// JSON Modules
+			"Json", "JsonUtilities", 
+
+			// Input
+			"EnhancedInput",
+        });
+
+        PrivateDependencyModuleNames.AddRange(new string[] {  });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
