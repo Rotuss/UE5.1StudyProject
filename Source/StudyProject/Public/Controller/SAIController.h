@@ -22,14 +22,31 @@ protected:
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	void BeginAI(APawn* InPawn);
+
+	void EndAI();
+
 private:
-	void OnPatrolTimerElapsed();
+	//void OnPatrolTimerElapsed();
 
 public:
-	FTimerHandle PatrolTimerHandle = FTimerHandle();
+	/*FTimerHandle PatrolTimerHandle = FTimerHandle();
 
-	static const float PatrolRepeatInterval;
+	static const float PatrolRepeatInterval;*/
 
 	static const float PatrolRadius;
+
+	static const FName StartPatrolPositionKey;
+
+	static const FName EndPatrolPositionKey;
+
+	static int32 ShowAIDebug;
+
+private:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	TObjectPtr<class UBlackboardData> BlackboardDataAsset;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	TObjectPtr<class UBehaviorTree> BehaviorTree;
 
 };
