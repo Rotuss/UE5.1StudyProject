@@ -36,21 +36,7 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION()
-	void OnMeleeAttackMontageEnded(class UAnimMontage* Montage, bool bInterrupted);
-
-	UFUNCTION()
-	void OnCheckHit();
-
-	/*UFUNCTION()
-	void OnCheckAttackInput();
-
-	UFUNCTION()
-	void EndCombo(UAnimMontage* InMontage, bool bInterruped);*/
-
 	void SetViewMode(EViewMode InViewMode);
-
-	//void BeginCombo();
 
 	float GetForwardInputValue() const { return ForwardInputValue; }
 	float GetRightInputValue() const { return RightInputValue; }
@@ -58,17 +44,7 @@ public:
 protected:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
-public:
-	// 런타임 콘솔 디버깅용 변수
-	static int32 ShowAttackDebug;
-
 private:
-	UFUNCTION()
-	void OnCheckAttackInput();
-
-	UFUNCTION()
-	void EndCombo(UAnimMontage* InMontage, bool bInterruped);
-
 	void Move(const FInputActionValue& InValue);
 
 	void Look(const FInputActionValue& InValue);
@@ -81,8 +57,6 @@ private:
 
 	void Attack(const FInputActionValue& InValue);
 
-	void BeginCombo();
-
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SViewCharacter", meta = (AllowPrivateAccess))
 	TObjectPtr<class USInputConfigData> PlayerCharacterInputConfigData;
@@ -90,26 +64,11 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SViewCharacter", meta = (AllowPrivateAccess))
 	TObjectPtr<class UInputMappingContext> PlayerCharacterInputMappingContext;
 
-	// TSubclassOf: ASWeaponActor클래스를 기준으로 자식 클래스들이 선택 가능하게
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
-	TSubclassOf<class ASWeaponActor> WeaponClass;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
-	TObjectPtr<class ASWeaponActor> WeaponInstance;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	float ForwardInputValue;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	float RightInputValue;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack", meta = (AllowPrivateAccess))
-	float MeleeAttackRange = 50.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack", meta = (AllowPrivateAccess))
-	float MeleeAttackRadius = 20.0f;
-
-	FOnMontageEnded OnMeleeAttackMontageEndedDelegate;
 
 	// UPROPERTY() 매크로를 사용하지 않으므로 초기화에 유념해야함
 	EViewMode CurrentViewMode = EViewMode::None;
@@ -121,14 +80,4 @@ private:
 	float ArmLengthChangeSpeed = 3.0f;
 	float ArmRotationChangeSpeed = 10.0f;
 
-	// 섹션별 어택 이름이 존재하기 때문에 이름을 받는 변수로 사용
-	FString AttackAnimMontageSectionName = FString(TEXT("Attack"));
-	int32 MaxComboCount = 3;
-	int32 CurrentComboCount = 0;
-
-	// 시리얼라이즈 되거나 레플리케이션 될 필요 없으므로 그냥 bool 자료형 사용
-	// 해당 키가 들어와야 다음으로 넘어갈 수 있음
-	bool bIsAttackKeyPressed = false;
-
-	bool bIsNowAttacking = false;
 };

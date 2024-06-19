@@ -53,4 +53,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SAnimInstance", meta = (AllowPrivateAccess))
 	uint8 bIsCrouching : 1;
 
+	// Á×À½
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SAnimInstance", meta = (AllowPrivateAccess))
+	uint8 bIsDead : 1;
+
 };

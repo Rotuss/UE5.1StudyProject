@@ -6,6 +6,14 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Engine/EngineTypes.h"
+#include "Engine/DamageEvents.h"
+#include "Animation/SAnimInstance.h"
+#include "Item/SWeaponActor.h"
+
+int32 ASCharacter::ShowAttackDebug = 0;
+FAutoConsoleVariableRef CVarShowAttackDebug(TEXT("StudyProject.ShowAttackDebug"), ASCharacter::ShowAttackDebug, TEXT(""), ECVF_Cheat);
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -40,6 +48,8 @@ ASCharacter::ASCharacter()
     GetCharacterMovement()->AirControl = 0.35f;
     // 걷다가 멈췄을 때 제동거리, 값이 클수록 더 빠르게 멈춤
     GetCharacterMovement()->BrakingDecelerationWalking = 2000.0f;
+
+    bIsDead = false;
 }
 
 // Called when the game starts or when spawned
@@ -47,6 +57,174 @@ void ASCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+    // 델리게이트 연결 설정
+    USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
+    if (true == IsValid(AnimInstance))
+    {
+        AnimInstance->OnMontageEnded.AddDynamic(this, &ThisClass::OnMeleeAttackMontageEnded);
+        //AnimInstance->OnCheckHit.AddDynamic(this, &ThisClass::OnCheckHit);
+        AnimInstance->OnCheckAttackInput.AddDynamic(this, &ThisClass::OnCheckAttackInput);
+    }
+
+}
+
+float ASCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+    float FinalDamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+    
+    CurrentHP = FMath::Clamp(CurrentHP - FinalDamageAmount, 0.0f, MaxHP);
+
+    // KINDA_SMALL_NUMBER: 0에 가까운 근사치
+    if (KINDA_SMALL_NUMBER > CurrentHP)
+    {
+        bIsDead = true;
+        CurrentHP = 0.0f;
+        // 죽었을 떄 콜리전 및 무브먼트가 영향 받지 않게 세팅
+        GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+    }
+
+    if (1 == ShowAttackDebug)
+    {
+        //UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s was taken damage: %.3f"), *GetName(), FinalDamageAmount));
+        UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s [%.1f / %.1f]"), *GetName(), CurrentHP, MaxHP));
+    }
+
+    return FinalDamageAmount;
+}
+
+void ASCharacter::OnMeleeAttackMontageEnded(UAnimMontage* InMontage, bool bInterruped)
+{
+    // 특정 AM_Rifle_Fire_Melee의 애니메이션이 끝났을 때만
+    if (true == InMontage->GetName().Equals(TEXT("AM_Rifle_Fire_Melee"), ESearchCase::IgnoreCase))
+    {
+        GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+        bIsNowAttacking = false;
+    }
+
+}
+
+void ASCharacter::OnCheckHit()
+{
+    //UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("CheckHit() has been called.")));
+
+    FHitResult HitResult;
+    // 매개변수: 태그명, 복잡한 콜리전 구조 사용할 것인지(0, 1), 무시될 액터(this를 한 이유는 자신의 공격에 자신이 당하지 않기 위함)
+    FCollisionQueryParams Params(NAME_None, false, this);
+
+    // Sweep: 처리대상, Single: 개수, ByChannel: 어떤걸 기준으로 검사?
+    bool bResult = GetWorld()->SweepSingleByChannel(
+        HitResult,                                                          // 충돌된 정보가 담기는 구조체 변수
+        GetActorLocation(),                                                 // 충돌 탐지시작점
+        GetActorLocation() + MeleeAttackRange * GetActorForwardVector(),    // 충돌 탐지 끝지점
+        FQuat::Identity,                                                    // 탐색 도형의 회전
+        ECC_GameTraceChannel2,                                              // 충돌 감지 채널
+        FCollisionShape::MakeSphere(MeleeAttackRadius),                     // 특정 사이즈의 모양으로 충돌 감지
+        Params                                                              // 탐색 방법에 대한 설정 구조체 변수
+    );
+
+    // 충돌이 된 경우
+    if (true == bResult)
+    {
+        if (true == IsValid(HitResult.GetActor()))
+        {
+            //UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("Hit Actor Name: %s"), *HitResult.GetActor()->GetName()));
+
+            FDamageEvent DamageEvent;
+            // TakeDamage매개변수: 대미지 크기, 대미지 종류, 공격 명령을 내린 컨트롤러, 대미지 주는 액터
+            HitResult.GetActor()->TakeDamage(50.0f, DamageEvent, GetController(), this);
+        }
+    }
+#pragma region CollisionDebugDrawing
+    if (1 == ShowAttackDebug)
+    {
+        FVector TraceVector = MeleeAttackRange * GetActorForwardVector();
+        FVector Center = GetActorLocation() + TraceVector + GetActorUpVector() * 40.0f;
+        float HalfHeight = MeleeAttackRange * 0.5f + MeleeAttackRadius;
+        FQuat CapsuleRot = FRotationMatrix::MakeFromZ(TraceVector).ToQuat();
+        FColor DrawColor = true == bResult ? FColor::Green : FColor::Red;
+        float DebugLifeTime = 5.0f;
+
+        DrawDebugCapsule(
+            GetWorld(),
+            Center,                 // 시작 지점
+            HalfHeight,             // 캡슐의 절반 높이
+            MeleeAttackRadius,      // 반지름
+            CapsuleRot,             // 어느쪽으로 회전?
+            DrawColor,              // 충돌X: 빨강, 충돌O: 초록 (위 변수에서 설정한 것)
+            false,
+            DebugLifeTime           // 지속시간
+        );
+
+        if (true == bResult)
+        {
+            if (true == IsValid(HitResult.GetActor()))
+            {
+                UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("Hit Actor Name: %s"), *HitResult.GetActor()->GetName()));
+            }
+        }
+    }
+#pragma endregion
+
+}
+
+void ASCharacter::OnCheckAttackInput()
+{
+    USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
+    checkf(true == IsValid(AnimInstance), TEXT("Invalid AnimInstance"));
+    checkf(true == IsValid(WeaponInstance), TEXT("Invalid WeaponInstance"));
+
+    if (true == bIsAttackKeyPressed)
+    {
+        // 콤보 카운트 계산
+        CurrentComboCount = FMath::Clamp(CurrentComboCount + 1, 1, MaxComboCount);
+
+        // 콤보 섹션 이동
+        FName NextSectionName = *FString::Printf(TEXT("%s%d"), *AttackAnimMontageSectionName, CurrentComboCount);
+        AnimInstance->Montage_JumpToSection(NextSectionName, WeaponInstance->GetMeleeAttackMontage());
+        bIsAttackKeyPressed = false;
+    }
+}
+
+void ASCharacter::EndAttack(UAnimMontage* InMontage, bool bInterruped)
+{
+    checkf(true == IsValid(WeaponInstance), TEXT("Invalid WeaponInstance"));
+    ensureMsgf(0 != CurrentComboCount, TEXT("0 == CurrentComboCount"));
+
+    // 초기화 작업
+    CurrentComboCount = 0;
+    bIsAttackKeyPressed = false;
+    bIsNowAttacking = false;
+    GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+
+    // 정리코드
+    if (true == OnMeleeAttackMontageEndedDelegate.IsBound()) OnMeleeAttackMontageEndedDelegate.Unbind();
+}
+
+void ASCharacter::BeginAttack()
+{
+    USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
+    checkf(true == IsValid(AnimInstance), TEXT("Invalid AnimInstance"));
+    checkf(true == IsValid(WeaponInstance), TEXT("Invalid WeaponInstance"));
+
+    // 멈추기
+    GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+    // 공격 중인지 확인
+    bIsNowAttacking = true;
+    // 몽타주 플레이 시작
+    AnimInstance->PlayAnimMontage(WeaponInstance->GetMeleeAttackMontage());
+
+    CurrentComboCount = 1;
+
+    if (false == OnMeleeAttackMontageEndedDelegate.IsBound())
+    {
+        // 특정한 몽타주가 끝났을 때만 별도의 작업을 하기 원함
+        // 따라서 Montage_SetEndDelegate을 사용하여 특정 몽타주(OnMeleeAttackMontageEndedDelegate)가 끝났을 때만 호출되게!
+        // 호출 작업 전에 미리 델리게이트로 특정 호출될 함수를 바인드하여
+        // 특정 WeaponInstance->GetMeleeAttackMontage()가 끝났을 때만 OnMeleeAttackMontageEndedDelegate 브로드캐스트가 호출되는 방식(EndAttack가 호출)
+        OnMeleeAttackMontageEndedDelegate.BindUObject(this, &ThisClass::EndAttack);
+        AnimInstance->Montage_SetEndDelegate(OnMeleeAttackMontageEndedDelegate, WeaponInstance->GetMeleeAttackMontage());
+    }
 }
 
 // Called every frame

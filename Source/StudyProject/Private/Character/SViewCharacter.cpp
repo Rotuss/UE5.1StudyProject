@@ -12,11 +12,10 @@
 #include "EnhancedInputSubsystems.h"
 #include "Input/SInputConfigData.h"
 #include "Item/SWeaponActor.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "Animation/SAnimInstance.h"
 
-int32 ASViewCharacter::ShowAttackDebug = 0;
-FAutoConsoleVariableRef CVarShowAttackDebug(TEXT("StudyProject.ShowAttackDebug"), ASViewCharacter::ShowAttackDebug, TEXT(""), ECVF_Cheat);
+//int32 ASViewCharacter::ShowAttackDebug = 0;
+//FAutoConsoleVariableRef CVarShowAttackDebug(TEXT("StudyProject.ShowAttackDebug"), ASViewCharacter::ShowAttackDebug, TEXT(""), ECVF_Cheat);
 
 ASViewCharacter::ASViewCharacter()
 {
@@ -39,14 +38,6 @@ void ASViewCharacter::BeginPlay()
         }
     }
 
-    // 델리게이트 연결 설정
-    USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
-    if (true == IsValid(AnimInstance))
-    {
-        AnimInstance->OnMontageEnded.AddDynamic(this, &ThisClass::OnMeleeAttackMontageEnded);
-        //AnimInstance->OnCheckHit.AddDynamic(this, &ThisClass::OnCheckHit);
-        AnimInstance->OnCheckAttackInput.AddDynamic(this, &ThisClass::OnCheckAttackInput);
-    }
 }
 
 void ASViewCharacter::PossessedBy(AController* NewController)
@@ -95,108 +86,6 @@ void ASViewCharacter::Tick(float DeltaTime)
         SpringArmComponent->TargetArmLength = FMath::FInterpTo(SpringArmComponent->TargetArmLength, DestArmLength, DeltaTime, ArmLengthChangeSpeed);
         SpringArmComponent->SetRelativeRotation(FMath::RInterpTo(SpringArmComponent->GetRelativeRotation(), DestArmRotation, DeltaTime, ArmRotationChangeSpeed));
     }
-}
-
-void ASViewCharacter::OnMeleeAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
-{
-    // 특정 AM_Rifle_Fire_Melee의 애니메이션이 끝났을 때만
-    if (true == Montage->GetName().Equals(TEXT("AM_Rifle_Fire_Melee"), ESearchCase::IgnoreCase))
-    {
-        GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-        bIsNowAttacking = false;
-    }
-}
-
-void ASViewCharacter::OnCheckHit()
-{
-    //UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("CheckHit() has been called.")));
-
-    FHitResult HitResult;
-    // 매개변수: 태그명, 복잡한 콜리전 구조 사용할 것인지(0, 1), 무시될 액터(this를 한 이유는 자신의 공격에 자신이 당하지 않기 위함)
-    FCollisionQueryParams Params(NAME_None, false, this);
-
-    // Sweep: 처리대상, Single: 개수, ByChannel: 어떤걸 기준으로 검사?
-    bool bResult = GetWorld()->SweepSingleByChannel(
-        HitResult,                                                          // 충돌된 정보가 담기는 구조체 변수
-        GetActorLocation(),                                                 // 충돌 탐지시작점
-        GetActorLocation() + MeleeAttackRange * GetActorForwardVector(),    // 충돌 탐지 끝지점
-        FQuat::Identity,                                                    // 탐색 도형의 회전
-        ECC_GameTraceChannel2,                                              // 충돌 감지 채널
-        FCollisionShape::MakeSphere(MeleeAttackRadius),                     // 특정 사이즈의 모양으로 충돌 감지
-        Params                                                              // 탐색 방법에 대한 설정 구조체 변수
-    );
-
-    // 충돌이 된 경우
-    /*if (true == bResult)
-    {
-        if (true == IsValid(HitResult.GetActor()))
-        {
-            UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("Hit Actor Name: %s"), *HitResult.GetActor()->GetName()));
-        }
-    }*/
-#pragma region CollisionDebugDrawing
-    if (1 == ShowAttackDebug)
-    {
-        FVector TraceVector = MeleeAttackRange * GetActorForwardVector();
-        FVector Center = GetActorLocation() + TraceVector + GetActorUpVector() * 40.0f;
-        float HalfHeight = MeleeAttackRange * 0.5f + MeleeAttackRadius;
-        FQuat CapsuleRot = FRotationMatrix::MakeFromZ(TraceVector).ToQuat();
-        FColor DrawColor = true == bResult ? FColor::Green : FColor::Red;
-        float DebugLifeTime = 5.0f;
-
-        DrawDebugCapsule(
-            GetWorld(),
-            Center,                 // 시작 지점
-            HalfHeight,             // 캡슐의 절반 높이
-            MeleeAttackRadius,      // 반지름
-            CapsuleRot,             // 어느쪽으로 회전?
-            DrawColor,              // 충돌X: 빨강, 충돌O: 초록 (위 변수에서 설정한 것)
-            false, 
-            DebugLifeTime           // 지속시간
-        );
-
-        if (true == bResult)
-        {
-            if (true == IsValid(HitResult.GetActor()))
-            {
-                UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("Hit Actor Name: %s"), *HitResult.GetActor()->GetName()));
-            }
-        }
-    }
-#pragma endregion
-}
-
-void ASViewCharacter::OnCheckAttackInput()
-{
-    USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
-    checkf(true == IsValid(AnimInstance), TEXT("Invalid AnimInstance"));
-    checkf(true == IsValid(WeaponInstance), TEXT("Invalid WeaponInstance"));
-
-    if (true == bIsAttackKeyPressed)
-    {
-        // 콤보 카운트 계산
-        CurrentComboCount = FMath::Clamp(CurrentComboCount + 1, 1, MaxComboCount);
-
-        // 콤보 섹션 이동
-        FName NextSectionName = *FString::Printf(TEXT("%s%d"), *AttackAnimMontageSectionName, CurrentComboCount);
-        AnimInstance->Montage_JumpToSection(NextSectionName, WeaponInstance->GetMeleeAttackMontage());
-        bIsAttackKeyPressed = false;
-    }
-}
-
-void ASViewCharacter::EndCombo(UAnimMontage* InMontage, bool bInterruped)
-{
-    checkf(true == IsValid(WeaponInstance), TEXT("Invalid WeaponInstance"));
-    ensureMsgf(0 != CurrentComboCount, TEXT("0 == CurrentComboCount"));
-
-    // 초기화 작업
-    CurrentComboCount = 0;
-    bIsAttackKeyPressed = false;
-    bIsNowAttacking = false;
-    GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-
-    // 정리코드
-    if (true == OnMeleeAttackMontageEndedDelegate.IsBound()) OnMeleeAttackMontageEndedDelegate.Unbind();
 }
 
 void ASViewCharacter::SetViewMode(EViewMode InViewMode)
@@ -281,32 +170,6 @@ void ASViewCharacter::SetViewMode(EViewMode InViewMode)
         break;
     default:
         break;
-    }
-}
-
-void ASViewCharacter::BeginCombo()
-{
-    USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
-    checkf(true == IsValid(AnimInstance), TEXT("Invalid AnimInstance"));
-    checkf(true == IsValid(WeaponInstance), TEXT("Invalid WeaponInstance"));
-
-    // 멈추기
-    GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
-    // 공격 중인지 확인
-    bIsNowAttacking = true;
-    // 몽타주 플레이 시작
-    AnimInstance->PlayAnimMontage(WeaponInstance->GetMeleeAttackMontage());
-
-    CurrentComboCount = 1;
-
-    if (false == OnMeleeAttackMontageEndedDelegate.IsBound())
-    {
-        // 특정한 몽타주가 끝났을 때만 별도의 작업을 하기 원함
-        // 따라서 Montage_SetEndDelegate을 사용하여 특정 몽타주(OnMeleeAttackMontageEndedDelegate)가 끝났을 때만 호출되게!
-        // 호출 작업 전에 미리 델리게이트로 특정 호출될 함수를 바인드하여
-        // 특정 WeaponInstance->GetMeleeAttackMontage()가 끝났을 때만 OnMeleeAttackMontageEndedDelegate 브로드캐스트가 호출되는 방식(EndCombo가 호출)
-        OnMeleeAttackMontageEndedDelegate.BindUObject(this, &ThisClass::EndCombo);
-        AnimInstance->Montage_SetEndDelegate(OnMeleeAttackMontageEndedDelegate, WeaponInstance->GetMeleeAttackMontage());
     }
 }
 
@@ -490,7 +353,7 @@ void ASViewCharacter::Attack(const FInputActionValue& InValue)
             bIsNowAttacking = true;*/
 
             // 첫 콤보
-            if (0 == CurrentComboCount) BeginCombo();
+            if (0 == CurrentComboCount) BeginAttack();
             // 콤보공격
             else
             {
