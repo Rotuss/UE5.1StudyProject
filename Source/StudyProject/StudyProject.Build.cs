@@ -18,6 +18,9 @@ public class StudyProject : ModuleRules
 
 			// Input
 			"EnhancedInput",
+
+			// AI
+            "NavigationSystem",
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {  });
