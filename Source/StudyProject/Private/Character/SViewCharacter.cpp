@@ -10,6 +10,7 @@
 #include "GameFramework/Controller.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "Input/SInputConfigData.h"
 #include "Item/SWeaponActor.h"
 #include "Animation/SAnimInstance.h"
@@ -20,6 +21,11 @@
 ASViewCharacter::ASViewCharacter()
 {
 	PrimaryActorTick.bCanEverTick = false;
+
+    ParticleSystemComponent = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleSystemComponent"));
+    ParticleSystemComponent->SetupAttachment(GetRootComponent());
+    // AutoActivate: 생성되면 바로 켜지는데 원할 때 키고 끌 수 있게끔 현재는 false로 세팅
+    ParticleSystemComponent->SetAutoActivate(false);
 
 }
 
@@ -171,6 +177,13 @@ void ASViewCharacter::SetViewMode(EViewMode InViewMode)
     default:
         break;
     }
+}
+
+void ASViewCharacter::AddCurrentKillCount(int32 InCurrentKillCount)
+{
+    CurrentKillCount = FMath::Clamp(CurrentKillCount + InCurrentKillCount, 0.0f, MaxKillCount);
+    ParticleSystemComponent->Activate(true);
+
 }
 
 void ASViewCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

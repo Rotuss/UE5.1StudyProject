@@ -30,6 +30,7 @@ class STUDYPROJECT_API ASViewCharacter : public ASCharacter
 public:
 	ASViewCharacter();
 
+public:
 	virtual void BeginPlay() override;
 
 	virtual void PossessedBy(AController* NewController) override;
@@ -40,6 +41,14 @@ public:
 
 	float GetForwardInputValue() const { return ForwardInputValue; }
 	float GetRightInputValue() const { return RightInputValue; }
+
+	UParticleSystemComponent* GetParticleSystem() const { return ParticleSystemComponent; }
+
+	void AddCurrentKillCount(int32 InCurrentKillCount);
+	void SetMaxKillCount(int32 InMaxKillCount) { MaxKillCount = InMaxKillCount; }
+
+	int32 GetMaxKillCount() const { return MaxKillCount; }
+	int32 GetCurrentKillCount() const { return CurrentKillCount; }
 
 protected:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
@@ -69,6 +78,15 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	float RightInputValue;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	TObjectPtr<class UParticleSystemComponent> ParticleSystemComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int32 CurrentKillCount = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int32 MaxKillCount = 99;
 
 	// UPROPERTY() 매크로를 사용하지 않으므로 초기화에 유념해야함
 	EViewMode CurrentViewMode = EViewMode::None;

@@ -14,6 +14,9 @@ class STUDYPROJECT_API ASAIController : public AAIController
 {
 	GENERATED_BODY()
 	
+	// NPC가 죽으면 EndAI를 호출할 수 있게 friend
+	friend class ASNonViewCharacter;
+
 public:
 	ASAIController();
 

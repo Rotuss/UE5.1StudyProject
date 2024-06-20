@@ -5,6 +5,8 @@
 #include "Controller/SAIController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Animation/SAnimInstance.h"
+#include "Components/CapsuleComponent.h"
+#include "Character/SViewCharacter.h"
 
 ASNonViewCharacter::ASNonViewCharacter()
 {
@@ -31,6 +33,32 @@ void ASNonViewCharacter::BeginPlay()
 
 		GetCharacterMovement()->MaxWalkSpeed = 300.0f;
 	}
+}
+
+float ASNonViewCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	float FinalDamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	// Super::TakeDamage()에서 나머지 처리
+	if (KINDA_SMALL_NUMBER > CurrentHP)
+	{
+		ASAIController* AIController = Cast<ASAIController>(GetController());
+		if (true == IsValid(AIController))
+		{
+			AIController->EndAI();
+		}
+
+		// 죽인 액터가 ASViewCharacter라면 킬 카운트 증가
+		ASViewCharacter* DamageCauserCharacter = Cast<ASViewCharacter>(DamageCauser);
+		if (true == IsValid(DamageCauserCharacter))
+		{
+			DamageCauserCharacter->AddCurrentKillCount(1);
+		}
+
+		Destroy();
+	}
+
+	return FinalDamageAmount;
 }
 
 void ASNonViewCharacter::BeginAttack()
