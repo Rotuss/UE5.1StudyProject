@@ -192,7 +192,7 @@ void ASViewCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 
 void ASViewCharacter::Move(const FInputActionValue& InValue)
 {
-    if (MOVE_None == GetCharacterMovement()->GetGroundMovementMode()) return;
+    if (MOVE_None == GetCharacterMovement()->GetGroundMovementMode() || true == bIsDead) return;
     
     FVector2D MovementVector = InValue.Get<FVector2D>();
 
@@ -248,6 +248,8 @@ void ASViewCharacter::Look(const FInputActionValue& InValue)
     //    // »óÇÏ
     //    AddControllerPitchInput(LookVector.Y);
     //}
+
+    if (MOVE_None == GetCharacterMovement()->GetGroundMovementMode() || true == bIsDead) return;
 
     FVector2D LookVector = InValue.Get<FVector2D>();
 

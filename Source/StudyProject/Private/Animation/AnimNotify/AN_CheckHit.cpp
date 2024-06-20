@@ -10,7 +10,7 @@ void UAN_CheckHit::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* A
 
 	if (true == IsValid(MeshComp))
 	{
-		ASViewCharacter* AttackingCharacter = Cast<ASViewCharacter>(MeshComp->GetOwner());
+		ASCharacter* AttackingCharacter = Cast<ASCharacter>(MeshComp->GetOwner());
 		if (true == IsValid(AttackingCharacter))
 		{
 			AttackingCharacter->OnCheckHit();
