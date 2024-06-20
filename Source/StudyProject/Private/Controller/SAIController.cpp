@@ -13,6 +13,7 @@
 const float ASAIController::PatrolRadius(500.0f);
 const FName ASAIController::StartPatrolPositionKey(TEXT("StartPatrolPosition"));
 const FName ASAIController::EndPatrolPositionKey(TEXT("EndPatrolPosition"));
+const FName ASAIController::TargetActorKey(TEXT("TargetActor"));
 int32 ASAIController::ShowAIDebug(0);
 FAutoConsoleVariableRef CVarShowAIDebug(TEXT("StudyProject.ShowAIDebug"), ASAIController::ShowAIDebug, TEXT(""), ECVF_Cheat);
 

@@ -40,6 +40,8 @@ public:
 
 	static const FName EndPatrolPositionKey;
 
+	static const FName TargetActorKey;
+
 	static int32 ShowAIDebug;
 
 private:
