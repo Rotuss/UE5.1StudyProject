@@ -36,6 +36,9 @@ protected:
 	UFUNCTION()
 	virtual void EndAttack(UAnimMontage* InMontage, bool bInterruped);
 	
+	UFUNCTION()
+	void OnCharacterDeath();
+
 	// BeginCombo()에서 이름 변경
 	virtual void BeginAttack();
 
@@ -46,7 +49,8 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	void SetMaxHP(float InMaxHP) { MaxHP = InMaxHP; }
+	// 스탯 컴포넌트로 이동
+	/*void SetMaxHP(float InMaxHP) { MaxHP = InMaxHP; }
 
 	void SetCurrentHP(float InCurrentHP) { CurrentHP = InCurrentHP; }
 
@@ -54,7 +58,11 @@ public:
 
 	float GetCurrentHP() const { return CurrentHP; }
 
-	bool IsDead() const { return bIsDead; }
+	bool IsDead() const { return bIsDead; }*/
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	class USStatComponent* GetStatComponent() const { return StatComponent; }
 
 public:
 	// 런타임 콘솔 디버깅용 변수
@@ -80,14 +88,18 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess))
 	float MeleeAttackRadius = 20.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess))
+	// 스탯 컴포넌트로 이동
+	/*UPROPERTY(EditAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess))
 	float MaxHP = 200.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess))
 	float CurrentHP = 200.0f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess))
-	uint8 bIsDead : 1;
+	uint8 bIsDead : 1;*/
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	TObjectPtr<class USStatComponent> StatComponent;
 
 	FOnMontageEnded OnMeleeAttackMontageEndedDelegate;
 

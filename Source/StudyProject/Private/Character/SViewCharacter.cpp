@@ -14,6 +14,7 @@
 #include "Input/SInputConfigData.h"
 #include "Item/SWeaponActor.h"
 #include "Animation/SAnimInstance.h"
+#include "Component/SStatComponent.h"
 
 //int32 ASViewCharacter::ShowAttackDebug = 0;
 //FAutoConsoleVariableRef CVarShowAttackDebug(TEXT("StudyProject.ShowAttackDebug"), ASViewCharacter::ShowAttackDebug, TEXT(""), ECVF_Cheat);
@@ -205,8 +206,9 @@ void ASViewCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 
 void ASViewCharacter::Move(const FInputActionValue& InValue)
 {
-    if (MOVE_None == GetCharacterMovement()->GetGroundMovementMode() || true == bIsDead) return;
-    
+    //if (MOVE_None == GetCharacterMovement()->GetGroundMovementMode() || true == bIsDead) return;
+    if (MOVE_None == GetCharacterMovement()->GetGroundMovementMode() || KINDA_SMALL_NUMBER >= StatComponent->GetCurrentHP()) return;
+
     FVector2D MovementVector = InValue.Get<FVector2D>();
 
     /*AddMovementInput(GetActorForwardVector(), MovementVector.X);
@@ -262,7 +264,8 @@ void ASViewCharacter::Look(const FInputActionValue& InValue)
     //    AddControllerPitchInput(LookVector.Y);
     //}
 
-    if (MOVE_None == GetCharacterMovement()->GetGroundMovementMode() || true == bIsDead) return;
+    //if (MOVE_None == GetCharacterMovement()->GetGroundMovementMode() || true == bIsDead) return;
+    if (MOVE_None == GetCharacterMovement()->GetGroundMovementMode() || KINDA_SMALL_NUMBER >= StatComponent->GetCurrentHP()) return;
 
     FVector2D LookVector = InValue.Get<FVector2D>();
 

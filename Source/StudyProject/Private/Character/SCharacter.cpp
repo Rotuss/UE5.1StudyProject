@@ -11,6 +11,7 @@
 #include "Engine/DamageEvents.h"
 #include "Animation/SAnimInstance.h"
 #include "Item/SWeaponActor.h"
+#include "Component/SStatComponent.h"
 
 int32 ASCharacter::ShowAttackDebug = 0;
 FAutoConsoleVariableRef CVarShowAttackDebug(TEXT("StudyProject.ShowAttackDebug"), ASCharacter::ShowAttackDebug, TEXT(""), ECVF_Cheat);
@@ -49,7 +50,9 @@ ASCharacter::ASCharacter()
     // 걷다가 멈췄을 때 제동거리, 값이 클수록 더 빠르게 멈춤
     GetCharacterMovement()->BrakingDecelerationWalking = 2000.0f;
 
-    bIsDead = false;
+    //bIsDead = false;
+    StatComponent = CreateDefaultSubobject<USStatComponent>(TEXT("StatComponent"));
+
 }
 
 // Called when the game starts or when spawned
@@ -66,28 +69,36 @@ void ASCharacter::BeginPlay()
         AnimInstance->OnCheckAttackInput.AddDynamic(this, &ThisClass::OnCheckAttackInput);
     }
 
+    if (true == IsValid(StatComponent) && false == StatComponent->OnOutOfCurrentHPDelegate.IsAlreadyBound(this, &ThisClass::OnCharacterDeath))
+    {
+        StatComponent->OnOutOfCurrentHPDelegate.AddDynamic(this, &ThisClass::OnCharacterDeath);
+    }
+
 }
 
 float ASCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
     float FinalDamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
     
-    CurrentHP = FMath::Clamp(CurrentHP - FinalDamageAmount, 0.0f, MaxHP);
+    //CurrentHP = FMath::Clamp(CurrentHP - FinalDamageAmount, 0.0f, MaxHP);
 
-    // KINDA_SMALL_NUMBER: 0에 가까운 근사치
-    if (KINDA_SMALL_NUMBER > CurrentHP)
-    {
-        bIsDead = true;
-        CurrentHP = 0.0f;
-        // 죽었을 떄 콜리전 및 무브먼트가 영향 받지 않게 세팅
-        GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-        GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
-    }
+    //// KINDA_SMALL_NUMBER: 0에 가까운 근사치
+    //if (KINDA_SMALL_NUMBER > CurrentHP)
+    //{
+    //    bIsDead = true;
+    //    CurrentHP = 0.0f;
+    //    // 죽었을 떄 콜리전 및 무브먼트가 영향 받지 않게 세팅
+    //    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    //    GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+    //}
+
+    StatComponent->SetCurrentHP(StatComponent->GetCurrentHP() - FinalDamageAmount);
 
     if (1 == ShowAttackDebug)
     {
         //UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s was taken damage: %.3f"), *GetName(), FinalDamageAmount));
-        UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s [%.1f / %.1f]"), *GetName(), CurrentHP, MaxHP));
+        //UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s [%.1f / %.1f]"), *GetName(), CurrentHP, MaxHP));
+        UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s [%.1f / %.1f]"), *GetName(), StatComponent->GetCurrentHP(), StatComponent->GetMaxHP()));
     }
 
     return FinalDamageAmount;
@@ -201,6 +212,12 @@ void ASCharacter::EndAttack(UAnimMontage* InMontage, bool bInterruped)
     if (true == OnMeleeAttackMontageEndedDelegate.IsBound()) OnMeleeAttackMontageEndedDelegate.Unbind();
 }
 
+void ASCharacter::OnCharacterDeath()
+{
+    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+}
+
 void ASCharacter::BeginAttack()
 {
     USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
@@ -239,5 +256,16 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+}
+
+// BeginPlay에서 델리게이트 바인드 걸어줬던 작업을 EndPlay에서 해제 작업 해줘야 함
+void ASCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (true == StatComponent->OnOutOfCurrentHPDelegate.IsAlreadyBound(this, &ThisClass::OnCharacterDeath))
+    {
+        StatComponent->OnOutOfCurrentHPDelegate.RemoveDynamic(this, &ThisClass::OnCharacterDeath);
+    }
+
+    Super::EndPlay(EndPlayReason);
 }
 

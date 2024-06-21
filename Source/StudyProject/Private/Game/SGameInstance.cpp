@@ -17,7 +17,7 @@ USGameInstance::USGameInstance()
 	UE_LOG(LogTemp, Log, TEXT("USGameInstance::USGameInstance() has been called."));
 
 	// CDO에 Name 속성 저장
-	Name = TEXT("USGameInstance Class Default Object");
+	//Name = TEXT("USGameInstance Class Default Object");
 }
 
 //UE_DISABLE_OPTIMIZATION		// 5.3버전 여기서부터 최적화 하지마!
@@ -440,6 +440,19 @@ void USGameInstance::Init()
 	// ===============================================
 #pragma endregion
 
+	if (false == IsValid(CharacterStatDataTable) || 0 >= CharacterStatDataTable->GetRowMap().Num())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Not enuough data in CharacterStatDataTable."));
+	}
+	else
+	{
+		// 한 줄씩 순회
+		for (int32 i = 1; i <= CharacterStatDataTable->GetRowMap().Num(); ++i)
+		{
+			check(nullptr != GetCharacterStatDataTableRow(i));
+		}
+	}
+
 }
 //UE_ENABLE_OPTIMIZATION		// 5.3버전 여기까지 최적화 하지마!
 PRAGMA_ENABLE_OPTIMIZATION		// 5.1버전 여기까지 최적화 하지마!
@@ -458,7 +471,18 @@ void USGameInstance::Shutdown()
 	Super::Shutdown();
 }
 
-void USGameInstance::HandlePigeonFlying(const FString& InName, const int32 InID)
+FSStatTableRow* USGameInstance::GetCharacterStatDataTableRow(int32 InLevel)
 {
-	UE_LOG(LogTemp, Log, TEXT("[%d] %s is now flying."), InID, *InName);
+	if (true == IsValid(CharacterStatDataTable))
+	{
+		// 레벨마다 해당되는 MaxHP 가져오기(레벨 한 줄을 반환한다 보면 됨)
+		return CharacterStatDataTable->FindRow<FSStatTableRow>(*FString::FromInt(InLevel), TEXT(""));
+	}
+
+	return nullptr;
 }
+
+//void USGameInstance::HandlePigeonFlying(const FString& InName, const int32 InID)
+//{
+//	UE_LOG(LogTemp, Log, TEXT("[%d] %s is now flying."), InID, *InName);
+//}

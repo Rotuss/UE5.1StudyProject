@@ -7,6 +7,7 @@
 #include "Animation/SAnimInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "Character/SViewCharacter.h"
+#include "Component/SStatComponent.h"
 
 ASNonViewCharacter::ASNonViewCharacter()
 {
@@ -40,7 +41,8 @@ float ASNonViewCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dam
 	float FinalDamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
 	// Super::TakeDamage()에서 나머지 처리
-	if (KINDA_SMALL_NUMBER > CurrentHP)
+	//if (KINDA_SMALL_NUMBER > CurrentHP)
+	if (KINDA_SMALL_NUMBER > GetStatComponent()->GetCurrentHP())
 	{
 		ASAIController* AIController = Cast<ASAIController>(GetController());
 		if (true == IsValid(AIController))
