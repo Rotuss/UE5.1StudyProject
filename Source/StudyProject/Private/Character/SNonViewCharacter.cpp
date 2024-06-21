@@ -4,20 +4,37 @@
 #include "Character/SNonViewCharacter.h"
 #include "Controller/SAIController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Animation/SAnimInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "Character/SViewCharacter.h"
 #include "Component/SStatComponent.h"
+#include "Component/SWidgetComponent.h"
+#include "UI/SW_HPBar.h"
 
 ASNonViewCharacter::ASNonViewCharacter()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.TickInterval = 0.1f;
 
 	AIControllerClass = ASAIController::StaticClass();
 	// ASNonViewCharacter는 레벨에 배치되거나 새롭게 생성되면 SAIController의 빙의가 자동으로 진행
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
 	GetCharacterMovement()->MaxWalkSpeed = 300.0f;
+
+	// 위젯 컴포넌트 생성 및 RootComponent에 부착
+	WidgetComponent = CreateDefaultSubobject<USWidgetComponent>(TEXT("WidgetComponent"));
+	WidgetComponent->SetupAttachment(GetRootComponent());
+	// 위치는 캐릭터 머리위에 보이기 위해 Z축으로부터 100.0f위로 설정
+	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f));
+	// EWidgetSpace::Screen는 Billboard 방식(카메라를 향해 UI가 회전)으로 보이나 플레이어 캐릭터를 가리게 됨. 또한 UI와 멀어져도 동일한 크기가 유지
+	// WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	// EWidgetSpace::World로 하면 UI가 멀어지면 크기가 작아짐, UI 회전도 안됨
+	WidgetComponent->SetWidgetSpace(EWidgetSpace::World);
+	WidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 }
 
 void ASNonViewCharacter::BeginPlay()
@@ -61,6 +78,39 @@ float ASNonViewCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dam
 	}
 
 	return FinalDamageAmount;
+}
+
+void ASNonViewCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (true == IsValid(WidgetComponent))
+	{
+		// 빌보드를 아예 안 쓸 수는 없음 따라서 현재 내 플레이어를 바라보게 만들어줘야 함
+
+		FVector WidgetComponentLocation = WidgetComponent->GetComponentLocation();
+		// UGameplayStatics::GetPlayerCameraManager(this, 0)는 현재 내가 조작하는 플레이어를 뜻함
+		FVector LocalPlayerCameraLocation = UGameplayStatics::GetPlayerCameraManager(this, 0)->GetCameraLocation();
+		// WidgetComponentLocation에서 LocalPlayerCameraLocation를 바라보는 방향의 회전값을 설정
+		// 즉 위젯이 플레이어를 향해 바라보게 됨
+		WidgetComponent->SetWorldRotation(UKismetMathLibrary::FindLookAtRotation(WidgetComponentLocation, LocalPlayerCameraLocation));
+	}
+
+}
+
+void ASNonViewCharacter::SetWidget(UStudyWidget* InStudyWidget)
+{
+	Super::SetWidget(InStudyWidget);
+
+	USW_HPBar* HPBarWidget = Cast<USW_HPBar>(InStudyWidget);
+	if (true == IsValid(HPBarWidget))
+	{
+		// 위젯 초기화
+		HPBarWidget->SetMaxHP(StatComponent->GetMaxHP());
+		HPBarWidget->InitializeHPBarWidget(StatComponent);
+		StatComponent->OnCurrentHPChangedDelegate.AddDynamic(HPBarWidget, &USW_HPBar::OnCurrentHPChange);
+	}
+
 }
 
 void ASNonViewCharacter::BeginAttack()

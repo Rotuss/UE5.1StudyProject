@@ -62,6 +62,8 @@ public:
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	virtual void SetWidget(class UStudyWidget* InStudyWidget) {}
+
 	class USStatComponent* GetStatComponent() const { return StatComponent; }
 
 public:

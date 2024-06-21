@@ -24,6 +24,10 @@ public:
 
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
+	virtual void Tick(float DeltaSeconds) override;
+
+	virtual void SetWidget(UStudyWidget* InStudyWidget) override;
+
 protected:
 	virtual void BeginAttack() override;
 
@@ -33,5 +37,9 @@ protected:
 	// BP_NPCÀÇ FireAttackMontage¿¡ AM_NPC_Fire ÁöÁ¤ ÇÊ¼ö
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	TObjectPtr<UAnimMontage> FireAttackMontage;
+
+	// À§Á¬ ÄÄÆ÷³ÍÆ® ºÎÂø
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	TObjectPtr<class USWidgetComponent> WidgetComponent;
 
 };
