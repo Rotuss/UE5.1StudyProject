@@ -4,6 +4,7 @@
 #include "Game/SGameMode.h"
 #include "Controller/SPlayerController.h"
 #include "Character/SPlayerPawn.h"
+#include "Game/SPlayerState.h"
 
 ASGameMode::ASGameMode()
 {
@@ -14,9 +15,9 @@ ASGameMode::ASGameMode()
 // 게임 시작 초기화 부분 호출
 void ASGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
-	UE_LOG(LogTemp, Error, TEXT("         Start ASGameMode::        InitGame()"));
+	//UE_LOG(LogTemp, Error, TEXT("         Start ASGameMode::        InitGame()"));
 	Super::InitGame(MapName, Options, ErrorMessage);
-	UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        InitGame()"));
+	//UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        InitGame()"));
 }
 
 // state는 데디케이티드 서버할 때 명확해짐
@@ -25,34 +26,34 @@ void ASGameMode::InitGame(const FString& MapName, const FString& Options, FStrin
 // 게임스테이트는 현재 플레이어가 얼마나 남았는지 전체적인 현재 상황 등
 void ASGameMode::InitGameState()
 {
-	UE_LOG(LogTemp, Error, TEXT("         Start ASGameMode::        InitGameState()"));
+	//UE_LOG(LogTemp, Error, TEXT("         Start ASGameMode::        InitGameState()"));
 	Super::InitGameState();
-	UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        InitGameState()"));
+	//UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        InitGameState()"));
 }
 
 // 컴포넌트들이 모두 초기화 된 후 작업
 void ASGameMode::PostInitializeComponents()
 {
-	UE_LOG(LogTemp, Error, TEXT("         Start ASGameMode::        PostInitializeComponents()"));
+	//UE_LOG(LogTemp, Error, TEXT("         Start ASGameMode::        PostInitializeComponents()"));
 	Super::PostInitializeComponents();
-	UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        PostInitializeComponents()"));
+	//UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        PostInitializeComponents()"));
 }
 
 // 로그인 전
 void ASGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMassage)
 {
-	UE_LOG(LogTemp, Error, TEXT("         Start ASGameMode::        PreLogin()"));
+	//UE_LOG(LogTemp, Error, TEXT("         Start ASGameMode::        PreLogin()"));
 	Super::PreLogin(Options, Address, UniqueId, ErrorMassage);
-	UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        PreLogin()"));
+	//UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        PreLogin()"));
 }
 
 // 로그인 중
 // UPlayer* NewPlayer 현재 인원과 같음
 APlayerController* ASGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
 {
-	UE_LOG(LogTemp, Error, TEXT("         Start ASGameMode::        Login()"));
+	//UE_LOG(LogTemp, Error, TEXT("         Start ASGameMode::        Login()"));
 	APlayerController* PlayerController = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
-	UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        Login()"));
+	//UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        Login()"));
 
 	return PlayerController;
 }
@@ -60,7 +61,14 @@ APlayerController* ASGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, 
 // 로그인 후
 void ASGameMode::PostLogin(APlayerController* NewPlayer)
 {
-	UE_LOG(LogTemp, Error, TEXT("         Start ASGameMode::        PostLogin(ASPlayerController)"));
+	//UE_LOG(LogTemp, Error, TEXT("         Start ASGameMode::        PostLogin(ASPlayerController)"));
 	Super::PostLogin(NewPlayer);
-	UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        PostLogin(ASPlayerController)"));
+	//UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        PostLogin(ASPlayerController)"));
+
+	ASPlayerState* PlayerState = NewPlayer->GetPlayerState<ASPlayerState>();
+	if (true == IsValid(PlayerState))
+	{
+		PlayerState->InitPlayerState();
+	}
+
 }

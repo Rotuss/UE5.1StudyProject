@@ -17,9 +17,12 @@ class STUDYPROJECT_API ASPlayerController : public APlayerController
 public:
     ASPlayerController();
     
+public:
     virtual void PostInitializeComponents() override;
 
     virtual void PlayerTick(float DeltaSeconds) override;
+
+    class USHUD* GetHUDWidget() const { return HUDWidget; };
 
 protected:
     virtual void SetupInputComponent() override;
@@ -31,4 +34,12 @@ protected:
     virtual void BeginPlay() override;
 
     virtual void EndPlay(EEndPlayReason::Type EndPlayReason) override;
+
+private:
+    UPROPERTY();
+    TObjectPtr<class USHUD> HUDWidget;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess));
+    TSubclassOf<class USHUD> HUDWidgetClass;
+
 };

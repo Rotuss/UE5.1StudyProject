@@ -11,6 +11,7 @@
 #include "Character/SViewCharacter.h"
 #include "Component/SStatComponent.h"
 #include "Component/SWidgetComponent.h"
+#include "Game/SPlayerState.h"
 #include "UI/SW_HPBar.h"
 
 ASNonViewCharacter::ASNonViewCharacter()
@@ -71,7 +72,13 @@ float ASNonViewCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dam
 		ASViewCharacter* DamageCauserCharacter = Cast<ASViewCharacter>(DamageCauser);
 		if (true == IsValid(DamageCauserCharacter))
 		{
-			DamageCauserCharacter->AddCurrentKillCount(1);
+			//DamageCauserCharacter->AddCurrentKillCount(1);
+
+			ASPlayerState* SPlayerState = Cast<ASPlayerState>(DamageCauserCharacter->GetPlayerState());
+			if (true == IsValid(SPlayerState))
+			{
+				SPlayerState->AddCurrentKillCount(1);
+			}
 		}
 
 		Destroy();

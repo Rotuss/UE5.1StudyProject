@@ -180,12 +180,12 @@ void ASViewCharacter::SetViewMode(EViewMode InViewMode)
     }
 }
 
-void ASViewCharacter::AddCurrentKillCount(int32 InCurrentKillCount)
-{
-    CurrentKillCount = FMath::Clamp(CurrentKillCount + InCurrentKillCount, 0.0f, MaxKillCount);
-    ParticleSystemComponent->Activate(true);
-
-}
+//void ASViewCharacter::AddCurrentKillCount(int32 InCurrentKillCount)
+//{
+//    CurrentKillCount = FMath::Clamp(CurrentKillCount + InCurrentKillCount, 0.0f, MaxKillCount);
+//    ParticleSystemComponent->Activate(true);
+//
+//}
 
 void ASViewCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
