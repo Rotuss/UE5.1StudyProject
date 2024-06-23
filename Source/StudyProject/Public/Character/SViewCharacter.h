@@ -67,6 +67,14 @@ private:
 
 	void Attack(const FInputActionValue& InValue);
 
+protected:
+	// 추가한 모듈에서 어떤 색상의 마테리얼을 사용할지 지정하기 위함
+	FSoftObjectPath CurrentPlayerCharacterMeshMaterialPath = FSoftObjectPath();
+
+	// 로딩할 때 쓰기위한 핸들
+	// 핸들 값을 알아야지 메시로드 이후 해당 정보를 취할 수 있음
+	TSharedPtr<struct FStreamableHandle> AssetStreamableHandle = nullptr;
+
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SViewCharacter", meta = (AllowPrivateAccess))
 	TObjectPtr<class USInputConfigData> PlayerCharacterInputConfigData;

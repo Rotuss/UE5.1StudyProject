@@ -11,10 +11,13 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
 #include "Input/SInputConfigData.h"
 #include "Item/SWeaponActor.h"
 #include "Animation/SAnimInstance.h"
 #include "Component/SStatComponent.h"
+#include "SViewCharacterSettings.h"             // 모듈에 추가해줬기 때문에 가능
 
 //int32 ASViewCharacter::ShowAttackDebug = 0;
 //FAutoConsoleVariableRef CVarShowAttackDebug(TEXT("StudyProject.ShowAttackDebug"), ASViewCharacter::ShowAttackDebug, TEXT(""), ECVF_Cheat);
@@ -27,6 +30,15 @@ ASViewCharacter::ASViewCharacter()
     ParticleSystemComponent->SetupAttachment(GetRootComponent());
     // AutoActivate: 생성되면 바로 켜지는데 원할 때 키고 끌 수 있게끔 현재는 false로 세팅
     ParticleSystemComponent->SetAutoActivate(false);
+
+    const USViewCharacterSettings* CDO = GetDefault<USViewCharacterSettings>();
+    if (0 < CDO->PlayerCharacterMeshMaterialPaths.Num())
+    {
+        for (FSoftObjectPath PlayerCharacterMeshPath : CDO->PlayerCharacterMeshMaterialPaths)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Path: %s"), *(PlayerCharacterMeshPath.ToString()));
+        }
+    }
 
 }
 
@@ -44,6 +56,31 @@ void ASViewCharacter::BeginPlay()
             Subsystem->AddMappingContext(PlayerCharacterInputMappingContext, 0);
         }
     }
+
+    // CDO 가져오기
+    const USViewCharacterSettings* CDO = GetDefault<USViewCharacterSettings>();
+    // 0 ~ 보유한 개수만큼 중 하나를 랜덤으로 고르기
+    int32 RandIndex = FMath::RandRange(0, CDO->PlayerCharacterMeshMaterialPaths.Num() - 1);
+    CurrentPlayerCharacterMeshMaterialPath = CDO->PlayerCharacterMeshMaterialPaths[RandIndex];
+    // RequestAsyncLoad: 비동기 요청
+    // CurrentPlayerCharacterMeshMaterialPath 경로랑 FStreamableDelegate::CreateLambda 델리게이트 람다를 사용하여 비동기 요청
+    AssetStreamableHandle = UAssetManager::GetStreamableManager().RequestAsyncLoad(
+        CurrentPlayerCharacterMeshMaterialPath,
+        FStreamableDelegate::CreateLambda([this]() -> void
+            {
+                // 핸들 정리
+                AssetStreamableHandle->ReleaseHandle();
+                // 마테리얼 얻기
+                TSoftObjectPtr<UMaterial> LoadedMaterialInstanceAsset(CurrentPlayerCharacterMeshMaterialPath);
+                // 얻는데 성공하여 유효한 값이면
+                if (true == LoadedMaterialInstanceAsset.IsValid())
+                {
+                    // 해당 마테리얼로 세팅
+                    // 0번인 이유는 바디를 설정하기 위함
+                    GetMesh()->SetMaterial(0, LoadedMaterialInstanceAsset.Get());
+                }
+            })
+    );
 
 }
 
