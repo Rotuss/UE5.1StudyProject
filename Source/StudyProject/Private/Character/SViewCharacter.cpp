@@ -13,10 +13,12 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Input/SInputConfigData.h"
 #include "Item/SWeaponActor.h"
 #include "Animation/SAnimInstance.h"
 #include "Component/SStatComponent.h"
+#include "Controller/SPlayerController.h"
 #include "Game/SPlayerState.h"
 #include "SViewCharacterSettings.h"             // 모듈에 추가해줬기 때문에 가능
 
@@ -278,6 +280,7 @@ void ASViewCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->QuickSlot01, ETriggerEvent::Started, this, &ThisClass::InputQuickSlot01);
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->QuickSlot02, ETriggerEvent::Started, this, &ThisClass::InputQuickSlot02);
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->Attack, ETriggerEvent::Started, this, &ThisClass::Attack);
+        EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->Menu, ETriggerEvent::Started, this, &ThisClass::Menu);
     }
 }
 
@@ -457,4 +460,13 @@ void ASViewCharacter::Attack(const FInputActionValue& InValue)
             }
         }
     }
+}
+
+void ASViewCharacter::Menu(const FInputActionValue& InValue)
+{
+    //UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("ASViewCharacter::Menu() has been called.")));
+
+    ASPlayerController* PlayerController = GetController<ASPlayerController>();
+    if (true == IsValid(PlayerController)) PlayerController->ToggleInGameMenu();
+
 }

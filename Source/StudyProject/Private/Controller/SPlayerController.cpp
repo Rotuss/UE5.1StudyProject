@@ -3,9 +3,10 @@
 
 #include "Controller/SPlayerController.h"
 #include "Game/SPlayerState.h"
+#include "UI/SHUD.h"
+#include "Blueprint/UserWidget.h"
 #include "Component/SStatComponent.h"
 #include "Character/SCharacter.h"
-#include "UI/SHUD.h"
 
 ASPlayerController::ASPlayerController()
 {
@@ -34,6 +35,42 @@ void ASPlayerController::PlayerTick(float DeltaSeconds)
         UE_LOG(LogTemp, Warning, TEXT("       End   ASPlayerController::PlayerTick()"));
         bOnce = true;
     }*/
+}
+
+void ASPlayerController::ToggleInGameMenu()
+{
+    checkf(true == IsValid(InGameMenuInstance), TEXT("Invalid InGameMenuInstance"));
+
+    // 메뉴가 켜져있지 않으면
+    if (false == bIsInGameMenuOn)
+    {
+        InGameMenuInstance->SetVisibility(ESlateVisibility::Visible);
+
+        FInputModeUIOnly Mode;
+        Mode.SetWidgetToFocus(InGameMenuInstance->GetCachedWidget());
+        SetInputMode(Mode);
+
+        // 만약 게임 일시 정지를 원할 때
+        // input에 문제가 될 경우, InputAction 에셋의 TriggerWhenPaused 속성을 true로 지정해야 Pause 상태에서도 해당 입력 액션이 동작
+        // SetPause(true); 
+
+        bShowMouseCursor = true;
+    }
+    // 켜져있는 메뉴 끄려면
+    else
+    {
+        InGameMenuInstance->SetVisibility(ESlateVisibility::Collapsed);
+
+        FInputModeGameOnly InputModeGameOnly;
+        SetInputMode(InputModeGameOnly);
+
+        // 만약 게임 일시 정지를 해제를 원할 때
+        // SetPause(false); 
+
+        bShowMouseCursor = false;
+    }
+
+    bIsInGameMenuOn = !bIsInGameMenuOn;
 }
 
 void ASPlayerController::SetupInputComponent()
@@ -94,6 +131,20 @@ void ASPlayerController::BeginPlay()
                     HUDWidget->BindStatComponent(StatComponent);
                 }
             }
+        }
+    }
+
+    // InGameMenuClass가 유효하다면
+    if (true == IsValid(InGameMenuClass))
+    {
+        // 위젯 생성(이니셜라이즈 호출)
+        InGameMenuInstance = CreateWidget<UUserWidget>(this, InGameMenuClass);
+        if (true == IsValid(InGameMenuInstance))
+        {
+            // 컨스트럭트 호출
+            // 3: 상위에 띄움 => 숫자가 크면 클수록 위쪽에 띄워짐
+            InGameMenuInstance->AddToViewport(3);
+            InGameMenuInstance->SetVisibility(ESlateVisibility::Collapsed);
         }
     }
 

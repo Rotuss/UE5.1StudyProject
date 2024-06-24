@@ -70,6 +70,8 @@ private:
 
 	void Attack(const FInputActionValue& InValue);
 
+	void Menu(const FInputActionValue& InValue);
+
 protected:
 	// 추가한 모듈에서 어떤 색상의 마테리얼을 사용할지 지정하기 위함
 	FSoftObjectPath CurrentPlayerCharacterMeshMaterialPath = FSoftObjectPath();
