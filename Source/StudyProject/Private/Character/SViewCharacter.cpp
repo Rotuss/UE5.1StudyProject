@@ -17,6 +17,7 @@
 #include "Item/SWeaponActor.h"
 #include "Animation/SAnimInstance.h"
 #include "Component/SStatComponent.h"
+#include "Game/SPlayerState.h"
 #include "SViewCharacterSettings.h"             // 모듈에 추가해줬기 때문에 가능
 
 //int32 ASViewCharacter::ShowAttackDebug = 0;
@@ -57,30 +58,30 @@ void ASViewCharacter::BeginPlay()
         }
     }
 
-    // CDO 가져오기
-    const USViewCharacterSettings* CDO = GetDefault<USViewCharacterSettings>();
-    // 0 ~ 보유한 개수만큼 중 하나를 랜덤으로 고르기
-    int32 RandIndex = FMath::RandRange(0, CDO->PlayerCharacterMeshMaterialPaths.Num() - 1);
-    CurrentPlayerCharacterMeshMaterialPath = CDO->PlayerCharacterMeshMaterialPaths[RandIndex];
-    // RequestAsyncLoad: 비동기 요청
-    // CurrentPlayerCharacterMeshMaterialPath 경로랑 FStreamableDelegate::CreateLambda 델리게이트 람다를 사용하여 비동기 요청
-    AssetStreamableHandle = UAssetManager::GetStreamableManager().RequestAsyncLoad(
-        CurrentPlayerCharacterMeshMaterialPath,
-        FStreamableDelegate::CreateLambda([this]() -> void
-            {
-                // 핸들 정리
-                AssetStreamableHandle->ReleaseHandle();
-                // 마테리얼 얻기
-                TSoftObjectPtr<UMaterial> LoadedMaterialInstanceAsset(CurrentPlayerCharacterMeshMaterialPath);
-                // 얻는데 성공하여 유효한 값이면
-                if (true == LoadedMaterialInstanceAsset.IsValid())
-                {
-                    // 해당 마테리얼로 세팅
-                    // 0번인 이유는 바디를 설정하기 위함
-                    GetMesh()->SetMaterial(0, LoadedMaterialInstanceAsset.Get());
-                }
-            })
-    );
+    //// CDO 가져오기
+    //const USViewCharacterSettings* CDO = GetDefault<USViewCharacterSettings>();
+    //// 0 ~ 보유한 개수만큼 중 하나를 랜덤으로 고르기
+    //int32 RandIndex = FMath::RandRange(0, CDO->PlayerCharacterMeshMaterialPaths.Num() - 1);
+    //CurrentPlayerCharacterMeshMaterialPath = CDO->PlayerCharacterMeshMaterialPaths[RandIndex];
+    //// RequestAsyncLoad: 비동기 요청
+    //// CurrentPlayerCharacterMeshMaterialPath 경로랑 FStreamableDelegate::CreateLambda 델리게이트 람다를 사용하여 비동기 요청
+    //AssetStreamableHandle = UAssetManager::GetStreamableManager().RequestAsyncLoad(
+    //    CurrentPlayerCharacterMeshMaterialPath,
+    //    FStreamableDelegate::CreateLambda([this]() -> void
+    //        {
+    //            // 핸들 정리
+    //            AssetStreamableHandle->ReleaseHandle();
+    //            // 마테리얼 얻기
+    //            TSoftObjectPtr<UMaterial> LoadedMaterialInstanceAsset(CurrentPlayerCharacterMeshMaterialPath);
+    //            // 얻는데 성공하여 유효한 값이면
+    //            if (true == LoadedMaterialInstanceAsset.IsValid())
+    //            {
+    //                // 해당 마테리얼로 세팅
+    //                // 0번인 이유는 바디를 설정하기 위함
+    //                GetMesh()->SetMaterial(0, LoadedMaterialInstanceAsset.Get());
+    //            }
+    //        })
+    //);
 
 }
 
@@ -215,6 +216,45 @@ void ASViewCharacter::SetViewMode(EViewMode InViewMode)
     default:
         break;
     }
+}
+
+void ASViewCharacter::SetMeshMaterial(const EPlayerTeam& InPlayerTeam)
+{
+    uint8 TeamIdx = 0u;
+    switch (InPlayerTeam)
+    {
+    case EPlayerTeam::Black:
+        TeamIdx = 0u;
+        break;
+    case EPlayerTeam::White:
+        TeamIdx = 1u;
+        break;
+    default:
+        break;
+    }
+
+    // CDO 가져오기
+    const USViewCharacterSettings* CDO = GetDefault<USViewCharacterSettings>();
+    CurrentPlayerCharacterMeshMaterialPath = CDO->PlayerCharacterMeshMaterialPaths[TeamIdx];
+    // RequestAsyncLoad: 비동기 요청
+    // CurrentPlayerCharacterMeshMaterialPath 경로랑 FStreamableDelegate::CreateLambda 델리게이트 람다를 사용하여 비동기 요청
+    AssetStreamableHandle = UAssetManager::GetStreamableManager().RequestAsyncLoad(
+        CurrentPlayerCharacterMeshMaterialPath,
+        FStreamableDelegate::CreateLambda([this]() -> void
+            {
+                // 핸들 정리
+                AssetStreamableHandle->ReleaseHandle();
+                // 마테리얼 얻기
+                TSoftObjectPtr<UMaterial> LoadedMaterialInstanceAsset(CurrentPlayerCharacterMeshMaterialPath);
+                // 얻는데 성공하여 유효한 값이면
+                if (true == LoadedMaterialInstanceAsset.IsValid())
+                {
+                    // 해당 마테리얼로 세팅
+                    // 0번인 이유는 바디를 설정하기 위함
+                    GetMesh()->SetMaterial(0, LoadedMaterialInstanceAsset.Get());
+                }
+            })
+    );
 }
 
 //void ASViewCharacter::AddCurrentKillCount(int32 InCurrentKillCount)

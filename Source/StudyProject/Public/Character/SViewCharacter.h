@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Character/SCharacter.h"
 #include "InputActionValue.h"
+#include "Game/SPlayerState.h"
 #include "SViewCharacter.generated.h"
 
 // 뷰모드를 위한 구조체
@@ -38,6 +39,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void SetViewMode(EViewMode InViewMode);
+
+	void SetMeshMaterial(const EPlayerTeam& InPlayerTeam);
 
 	float GetForwardInputValue() const { return ForwardInputValue; }
 	float GetRightInputValue() const { return RightInputValue; }

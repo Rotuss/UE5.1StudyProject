@@ -17,6 +17,36 @@ void ASPlayerState::InitPlayerState()
 	CurrentKillCount = 0;
 	MaxKillCount = 99;
 
+	// 로비 레이아웃에서 저장한 것을 불러들이기
+	const FString SavedDirectoryPath = FPaths::Combine(FPlatformMisc::ProjectDir(), TEXT("Saved"));
+	const FString SavedFileName(TEXT("PlayerInfo.txt"));
+	FString AbsoluteFilePath = FPaths::Combine(*SavedDirectoryPath, *SavedFileName);
+	FPaths::MakeStandardFilename(AbsoluteFilePath);
+
+	// JSON 읽기
+	FString PlayerInfoJsonString;
+	FFileHelper::LoadFileToString(PlayerInfoJsonString, *AbsoluteFilePath);
+	TSharedRef<TJsonReader<TCHAR>> JsonReaderArchive = TJsonReaderFactory<TCHAR>::Create(PlayerInfoJsonString);
+
+	// JSON Object 만들기
+	TSharedPtr<FJsonObject> PlayerInfoJsonObject = nullptr;
+	// 디시리얼라이즈(바이트 -> 오브젝트)
+	if (FJsonSerializer::Deserialize(JsonReaderArchive, PlayerInfoJsonObject) == true)
+	{
+		// 이름 설정
+		FString PlayerNameString = PlayerInfoJsonObject->GetStringField(TEXT("playername"));
+		SetPlayerName(PlayerNameString);
+
+		// 팀 값 설정
+		uint8 PlayerTeamNumber = PlayerInfoJsonObject->GetIntegerField(TEXT("team"));
+		PlayerTeam = static_cast<EPlayerTeam>(PlayerTeamNumber);
+		ASViewCharacter* PlayerCharacter = Cast<ASViewCharacter>(GetPawn());
+		if (true == IsValid(PlayerCharacter))
+		{
+			// 팀에 따른 머테리얼 세팅
+			PlayerCharacter->SetMeshMaterial(PlayerTeam);
+		}
+	}
 }
 
 void ASPlayerState::AddCurrentKillCount(int32 InCurrentKillCount)
