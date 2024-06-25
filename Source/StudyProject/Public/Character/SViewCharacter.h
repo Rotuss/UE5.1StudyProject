@@ -76,6 +76,12 @@ private:
 
 	void EndIronSight(const FInputActionValue& InValue);
 
+	void ToggleTrigger(const FInputActionValue& InValue);
+
+	void StartFire(const FInputActionValue& InValue);
+
+	void StopFire(const FInputActionValue& InValue);
+
 	void TryFire();
 
 protected:
@@ -99,6 +105,11 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	float RightInputValue;
 
+	// 분당 탄환을 몇 번 발사할 것인가
+	// 숫자가 클수록 빠르게 연사
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	float FirePerMinute = 600.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	TObjectPtr<class UParticleSystemComponent> ParticleSystemComponent;
 
@@ -108,6 +119,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 MaxKillCount = 99;*/
+
+	FTimerHandle BetweenShotsTimer;
 
 	// UPROPERTY() 매크로를 사용하지 않으므로 초기화에 유념해야함
 	EViewMode CurrentViewMode = EViewMode::None;
@@ -122,4 +135,8 @@ private:
 	// Zoom 작업
 	float TargetFOV = 70.0f;
 	float CurrentFOV = 70.0f;
+
+	// 연사 작업
+	float TimeBetweenFire;
+	bool bIsTriggerToggle = false;
 };

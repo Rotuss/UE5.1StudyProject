@@ -45,6 +45,8 @@ ASViewCharacter::ASViewCharacter()
         }
     }
 
+    TimeBetweenFire = 60.0f / FirePerMinute;
+
 }
 
 void ASViewCharacter::BeginPlay()
@@ -291,6 +293,9 @@ void ASViewCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->Menu, ETriggerEvent::Started, this, &ThisClass::Menu);
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->IronSight, ETriggerEvent::Started, this, &ThisClass::StartIronSight);
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->IronSight, ETriggerEvent::Completed, this, &ThisClass::EndIronSight);
+        EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->Trigger, ETriggerEvent::Started, this, &ThisClass::ToggleTrigger);
+        EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->Attack, ETriggerEvent::Started, this, &ThisClass::StartFire);
+        EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->Attack, ETriggerEvent::Completed, this, &ThisClass::StopFire);
     }
 }
 
@@ -499,7 +504,8 @@ void ASViewCharacter::Attack(const FInputActionValue& InValue)
     //    }
     //}
 
-    TryFire();
+    // 단발
+    if (false == bIsTriggerToggle) TryFire();
 
 }
 
@@ -521,6 +527,30 @@ void ASViewCharacter::StartIronSight(const FInputActionValue& InValue)
 void ASViewCharacter::EndIronSight(const FInputActionValue& InValue)
 {
     TargetFOV = 70.0f;
+
+}
+
+void ASViewCharacter::ToggleTrigger(const FInputActionValue& InValue)
+{
+    bIsTriggerToggle = !bIsTriggerToggle;
+
+}
+
+void ASViewCharacter::StartFire(const FInputActionValue& InValue)
+{
+    // 연발
+    if (true == bIsTriggerToggle)
+    {
+        // 타이머로 발사
+        GetWorldTimerManager().SetTimer(BetweenShotsTimer, this, &ThisClass::TryFire, TimeBetweenFire, true);
+    }
+
+}
+
+void ASViewCharacter::StopFire(const FInputActionValue& InValue)
+{
+    // 타이머 정리
+    GetWorldTimerManager().ClearTimer(BetweenShotsTimer);
 
 }
 
