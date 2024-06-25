@@ -23,6 +23,8 @@ public:
 
 	UAnimMontage* GetUnequipAnimMontage() const { return UnequipAnimMontage; }
 
+	UAnimMontage* GetFireAnimMontage() const { return FireAnimMontage; }
+
 	TSubclassOf<UAnimInstance> GetUnarmedCharacterAnimLayer() const { return UnarmedCharacterAnimLayer; }
 
 	TSubclassOf<UAnimInstance> GetArmedCharacterAnimLayer() const { return ArmedCharacterAnimLayer; }
@@ -56,6 +58,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	TObjectPtr<UAnimMontage> UnequipAnimMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	TObjectPtr<UAnimMontage> FireAnimMontage;
 
 	// 무기에 따른 유효 사거리, Units = cm => 단위를 지정할 수 있음
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess, Units = cm))

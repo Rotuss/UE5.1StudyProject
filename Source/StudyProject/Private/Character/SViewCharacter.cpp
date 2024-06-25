@@ -656,5 +656,14 @@ void ASViewCharacter::TryFire()
             }
         }
 
+        UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+        if (true == IsValid(AnimInstance) && true == IsValid(WeaponInstance))
+        {
+            if (false == AnimInstance->Montage_IsPlaying(WeaponInstance->GetFireAnimMontage()))
+            {
+                AnimInstance->Montage_Play(WeaponInstance->GetFireAnimMontage());
+            }
+        }
+
     }
 }
