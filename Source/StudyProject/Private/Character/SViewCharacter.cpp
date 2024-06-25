@@ -13,6 +13,8 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
+#include "Engine/EngineTypes.h"
+#include "Engine/DamageEvents.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Input/SInputConfigData.h"
 #include "Item/SWeaponActor.h"
@@ -27,7 +29,7 @@
 
 ASViewCharacter::ASViewCharacter()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
     ParticleSystemComponent = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleSystemComponent"));
     ParticleSystemComponent->SetupAttachment(GetRootComponent());
@@ -101,6 +103,12 @@ void ASViewCharacter::PossessedBy(AController* NewController)
 void ASViewCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+
+    // 줌 전환 자연스러움을 위해 Tick에서 적용
+    CurrentFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 35.0f);
+    CameraComponent->SetFieldOfView(CurrentFOV);
+
+    return;
 
     switch (CurrentViewMode)
     {
@@ -281,6 +289,8 @@ void ASViewCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->QuickSlot02, ETriggerEvent::Started, this, &ThisClass::InputQuickSlot02);
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->Attack, ETriggerEvent::Started, this, &ThisClass::Attack);
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->Menu, ETriggerEvent::Started, this, &ThisClass::Menu);
+        EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->IronSight, ETriggerEvent::Started, this, &ThisClass::StartIronSight);
+        EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->IronSight, ETriggerEvent::Completed, this, &ThisClass::EndIronSight);
     }
 }
 
@@ -466,28 +476,31 @@ void ASViewCharacter::Attack(const FInputActionValue& InValue)
     // 점프 중 공격X
     if (true == GetCharacterMovement()->IsFalling()) return;
 
-    USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
-    checkf(true == IsValid(AnimInstance), TEXT("Invalid AnimInstance"));
+    //USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
+    //checkf(true == IsValid(AnimInstance), TEXT("Invalid AnimInstance"));
 
-    if (true == IsValid(WeaponInstance))
-    {
-        if (true == IsValid(WeaponInstance->GetMeleeAttackMontage()))
-        {
-            /*AnimInstance->PlayAnimMontage(WeaponInstance->GetMeleeAttackMontage());
+    //if (true == IsValid(WeaponInstance))
+    //{
+    //    if (true == IsValid(WeaponInstance->GetMeleeAttackMontage()))
+    //    {
+    //        /*AnimInstance->PlayAnimMontage(WeaponInstance->GetMeleeAttackMontage());
 
-            GetCharacterMovement()->SetMovementMode(MOVE_None);
-            bIsNowAttacking = true;*/
+    //        GetCharacterMovement()->SetMovementMode(MOVE_None);
+    //        bIsNowAttacking = true;*/
 
-            // 첫 콤보
-            if (0 == CurrentComboCount) BeginAttack();
-            // 콤보공격
-            else
-            {
-                ensure(FMath::IsWithinInclusive<int32>(CurrentComboCount, 1, MaxComboCount));
-                bIsAttackKeyPressed = true;
-            }
-        }
-    }
+    //        // 첫 콤보
+    //        if (0 == CurrentComboCount) BeginAttack();
+    //        // 콤보공격
+    //        else
+    //        {
+    //            ensure(FMath::IsWithinInclusive<int32>(CurrentComboCount, 1, MaxComboCount));
+    //            bIsAttackKeyPressed = true;
+    //        }
+    //    }
+    //}
+
+    TryFire();
+
 }
 
 void ASViewCharacter::Menu(const FInputActionValue& InValue)
@@ -497,4 +510,121 @@ void ASViewCharacter::Menu(const FInputActionValue& InValue)
     ASPlayerController* PlayerController = GetController<ASPlayerController>();
     if (true == IsValid(PlayerController)) PlayerController->ToggleInGameMenu();
 
+}
+
+void ASViewCharacter::StartIronSight(const FInputActionValue& InValue)
+{
+    TargetFOV = 45.0f;
+
+}
+
+void ASViewCharacter::EndIronSight(const FInputActionValue& InValue)
+{
+    TargetFOV = 70.0f;
+
+}
+
+void ASViewCharacter::TryFire()
+{
+    APlayerController* PlayerController = GetController<APlayerController>();
+    if (true == IsValid(PlayerController) && true == IsValid(WeaponInstance))
+    {
+#pragma region CaculateTargetTransform
+        float FocalDistance = 400.0f;       // 스프링암의 길이라고 생각하면 됨
+        FVector FocalLocation;
+        FVector CameraLocation;
+        FRotator CameraRotation;
+
+        // 컨트롤러에서 카메라의 위치와 회전 정보를 가져와 대입
+        PlayerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
+
+        // 카메라 회전에 대한 단위 벡터(단위 방향 벡터)
+        FVector AimDirectionFromCamera = CameraRotation.Vector().GetSafeNormal();
+        // 최종 초점 위치(== 눈 위치), 총 정보 반영X
+        FocalLocation = CameraLocation + (AimDirectionFromCamera * FocalDistance);
+
+        FVector WeaponMuzzleLocation = WeaponInstance->GetMesh()->GetSocketLocation(TEXT("MuzzleFlash"));
+        // WeaponMuzzleLocation - FocalLocation: Focal에서 WeaponMuzzle로 가는 벡터
+        // |: 벡터끼리 할 경우 내적을 뜻함
+        // (WeaponMuzzleLocation - FocalLocation) | AimDirectionFromCamera): 스칼라 값, 즉 길이
+        // 구한 스칼라 값 * AimDirectionFromCamera: 해당 길이(스칼라)에 대한 단위 방향 벡터
+        // FocalLocation까지 더한다면 눈 + 무기 정보 => 최종 초점 위치(FinalFocalLocation)
+        FVector FinalFocalLocation = FocalLocation + (((WeaponMuzzleLocation - FocalLocation) | AimDirectionFromCamera) * AimDirectionFromCamera);
+
+        // 이를 토대로 얻은 값들을 최종 타겟 트랜스폼으로 지정
+        FTransform TargetTransform = FTransform(CameraRotation, FinalFocalLocation);
+
+        if (1 == ShowAttackDebug)
+        {
+            DrawDebugSphere(GetWorld(), WeaponMuzzleLocation, 2.0f, 16, FColor::Red, false, 60.0f);
+
+            DrawDebugSphere(GetWorld(), CameraLocation, 2.0f, 16, FColor::Yellow, false, 60.0f);
+
+            DrawDebugSphere(GetWorld(), FinalFocalLocation, 2.0f, 16, FColor::Magenta, false, 60.0f);
+
+            // (WeaponLoc - FocalLoc)
+            DrawDebugLine(GetWorld(), FocalLocation, WeaponMuzzleLocation, FColor::Yellow, false, 60.0f, 0, 2.0f);
+
+            // AimDir
+            DrawDebugLine(GetWorld(), CameraLocation, FinalFocalLocation, FColor::Blue, false, 60.0f, 0, 2.0f);
+
+            // Project Direction Line
+            DrawDebugLine(GetWorld(), WeaponMuzzleLocation, FinalFocalLocation, FColor::Red, false, 60.0f, 0, 2.0f);
+        }
+
+#pragma endregion
+
+#pragma region PerformLineTracing
+
+        // GetUnitAxis(EAxis::X): 포워드 벡터
+        FVector BulletDirection = TargetTransform.GetUnitAxis(EAxis::X);
+        FVector StartLocation = TargetTransform.GetLocation();
+        FVector EndLocation = StartLocation + BulletDirection * WeaponInstance->GetMaxRange();
+
+        FHitResult HitResult;
+        FCollisionQueryParams TraceParams(NAME_None, false, this);
+        TraceParams.AddIgnoredActor(WeaponInstance);
+
+        // 관통X
+        bool IsCollided = GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_GameTraceChannel2, TraceParams);
+        // 충돌된 것이 없는 경우
+        if (false == IsCollided)
+        {
+            HitResult.TraceStart = StartLocation;
+            HitResult.TraceEnd = EndLocation;
+        }
+
+        if (2 == ShowAttackDebug)
+        {
+            if (true == IsCollided)
+            {
+                DrawDebugSphere(GetWorld(), StartLocation, 2.0f, 16, FColor::Red, false, 60.0f);
+
+                DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 2.0f, 16, FColor::Green, false, 60.0f);
+
+                DrawDebugLine(GetWorld(), StartLocation, HitResult.ImpactPoint, FColor::Blue, false, 60.0f, 0, 2.0f);
+            }
+            else
+            {
+                DrawDebugSphere(GetWorld(), StartLocation, 2.0f, 16, FColor::Red, false, 60.0f);
+
+                DrawDebugSphere(GetWorld(), EndLocation, 2.0f, 16, FColor::Green, false, 60.0f);
+
+                DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Blue, false, 60.0f, 0, 2.0f);
+            }
+        }
+
+#pragma endregion
+
+        if (true == IsCollided)
+        {
+            ASCharacter* HittedCharacter = Cast<ASCharacter>(HitResult.GetActor());
+            if (true == IsValid(HittedCharacter))
+            {
+                FDamageEvent DamageEvent;
+                HittedCharacter->TakeDamage(10.0f, DamageEvent, GetController(), this);
+            }
+        }
+
+    }
 }

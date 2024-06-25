@@ -72,6 +72,12 @@ private:
 
 	void Menu(const FInputActionValue& InValue);
 
+	void StartIronSight(const FInputActionValue& InValue);
+
+	void EndIronSight(const FInputActionValue& InValue);
+
+	void TryFire();
+
 protected:
 	// 추가한 모듈에서 어떤 색상의 마테리얼을 사용할지 지정하기 위함
 	FSoftObjectPath CurrentPlayerCharacterMeshMaterialPath = FSoftObjectPath();
@@ -113,4 +119,7 @@ private:
 	float ArmLengthChangeSpeed = 3.0f;
 	float ArmRotationChangeSpeed = 10.0f;
 
+	// Zoom 작업
+	float TargetFOV = 70.0f;
+	float CurrentFOV = 70.0f;
 };

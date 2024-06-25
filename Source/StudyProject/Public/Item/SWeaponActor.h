@@ -27,6 +27,8 @@ public:
 
 	TSubclassOf<UAnimInstance> GetArmedCharacterAnimLayer() const { return ArmedCharacterAnimLayer; }
 
+	float GetMaxRange() const { return MaxRange; }
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -54,5 +56,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	TObjectPtr<UAnimMontage> UnequipAnimMontage;
+
+	// 무기에 따른 유효 사거리, Units = cm => 단위를 지정할 수 있음
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess, Units = cm))
+	float MaxRange = 25000.0f;
 
 };

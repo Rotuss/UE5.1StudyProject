@@ -21,8 +21,6 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-
 	UFUNCTION()
 	void OnMeleeAttackMontageEnded(UAnimMontage* InMontage, bool bInterruped);
 
@@ -61,6 +59,8 @@ public:
 	bool IsDead() const { return bIsDead; }*/
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	virtual void SetWidget(class UStudyWidget* InStudyWidget) {}
 

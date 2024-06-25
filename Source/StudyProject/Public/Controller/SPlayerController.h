@@ -47,6 +47,9 @@ private:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASPlayerController", meta = (AllowPrivateAccess))
     TSubclassOf<UUserWidget> InGameMenuClass;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASPlayerController", meta = (AllowPrivateAccess))
+    TSubclassOf<UUserWidget> CrosshairUIClass;
+
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ASPlayerController", meta = (AllowPrivateAccess))
     TObjectPtr<UUserWidget> InGameMenuInstance;
 

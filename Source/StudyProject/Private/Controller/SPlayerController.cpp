@@ -148,6 +148,16 @@ void ASPlayerController::BeginPlay()
         }
     }
 
+    if (true == IsValid(CrosshairUIClass))
+    {
+        UUserWidget* CrosshairUIInstance = CreateWidget<UUserWidget>(this, CrosshairUIClass);
+        if (true == IsValid(CrosshairUIInstance))
+        {
+            CrosshairUIInstance->AddToViewport(1);
+            CrosshairUIInstance->SetVisibility(ESlateVisibility::Visible);
+        }
+    }
+
 }
 
 // 게임 종료
