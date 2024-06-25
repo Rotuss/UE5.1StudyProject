@@ -110,6 +110,15 @@ void ASViewCharacter::Tick(float DeltaTime)
     CurrentFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 35.0f);
     CameraComponent->SetFieldOfView(CurrentFOV);
 
+    // 컨트롤러가 유효하다면
+    if (true == IsValid(GetController()))
+    {
+        // 해당 컨트롤러 정보 관리 => 애니메이션 회전 방향을 위한 작업
+        FRotator ControlRotation = GetController()->GetControlRotation();
+        CurrentAimPitch = ControlRotation.Pitch;
+        CurrentAimYaw = ControlRotation.Yaw;
+    }
+
     return;
 
     switch (CurrentViewMode)

@@ -95,4 +95,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	EMovementDirection MovementDirection;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "USTPSAnimInstance", meta = (AllowPrivateAccess = true))
+	FRotator ControlRotation;
+
 };

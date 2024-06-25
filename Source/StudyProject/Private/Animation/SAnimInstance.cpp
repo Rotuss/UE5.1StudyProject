@@ -71,6 +71,10 @@ void USAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 				if (KINDA_SMALL_NUMBER < OwnerPlayerCharacter->GetRightInputValue()) MovementDirection = EMovementDirection::Right;
 				// 우측 음수: 왼
 				if (-KINDA_SMALL_NUMBER > OwnerPlayerCharacter->GetRightInputValue()) MovementDirection = EMovementDirection::Left;
+
+				// 방향 가져오기
+				ControlRotation.Pitch = OwnerPlayerCharacter->GetCurrentAimPitch();
+				ControlRotation.Yaw = OwnerPlayerCharacter->GetCurrentAimYaw();
 			}
 		}
 	}

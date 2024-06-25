@@ -45,6 +45,9 @@ public:
 	float GetForwardInputValue() const { return ForwardInputValue; }
 	float GetRightInputValue() const { return RightInputValue; }
 
+	float GetCurrentAimPitch() const { return CurrentAimPitch; }
+	float GetCurrentAimYaw() const { return CurrentAimYaw; }
+
 	UParticleSystemComponent* GetParticleSystem() const { return ParticleSystemComponent; }
 
 	// PlayerState 쪽으로 이동
@@ -139,4 +142,8 @@ private:
 	// 연사 작업
 	float TimeBetweenFire;
 	bool bIsTriggerToggle = false;
+
+	float CurrentAimPitch = 0.0f;
+	float CurrentAimYaw = 0.0f;
+
 };
