@@ -415,6 +415,20 @@ void ASViewCharacter::InputQuickSlot01(const FInputActionValue& InValue)
         {
             WeaponInstance->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocket);
         }
+
+        // 레이어 연결(무기O)
+        TSubclassOf<UAnimInstance> RifleCharacterAnimLayer = WeaponInstance->GetArmedCharacterAnimLayer();
+        if (true == IsValid(RifleCharacterAnimLayer))
+        {
+            GetMesh()->LinkAnimClassLayers(RifleCharacterAnimLayer);
+        }
+
+        // 무기 장착시 몽타주 실행
+        USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
+        if (true == IsValid(AnimInstance) && true == IsValid(WeaponInstance->GetEquipAnimMontage()))
+        {
+            AnimInstance->Montage_Play(WeaponInstance->GetEquipAnimMontage());
+        }
     }
 }
 
@@ -423,6 +437,20 @@ void ASViewCharacter::InputQuickSlot02(const FInputActionValue& InValue)
 {
     if (true == IsValid(WeaponInstance))
     {
+        // 레이어 연결(무기X)
+        TSubclassOf<UAnimInstance> UnarmedCharacterAnimLayer = WeaponInstance->GetUnarmedCharacterAnimLayer();
+        if (true == IsValid(UnarmedCharacterAnimLayer))
+        {
+            GetMesh()->LinkAnimClassLayers(UnarmedCharacterAnimLayer);
+        }
+
+        // 무기 해제시 몽타주 실행
+        USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
+        if (true == IsValid(AnimInstance) && true == IsValid(WeaponInstance->GetUnequipAnimMontage()))
+        {
+            AnimInstance->Montage_Play(WeaponInstance->GetUnequipAnimMontage());
+        }
+
         WeaponInstance->Destroy();
         WeaponInstance = nullptr;
     }

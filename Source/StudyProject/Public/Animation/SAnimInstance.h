@@ -9,6 +9,28 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCheckHit);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCheckAttackInput);
 
+UENUM(BlueprintType)
+enum class ELocomotionState : uint8
+{
+	None,
+	Idle,
+	Walk,
+	End,
+
+};
+
+UENUM(BlueprintType)
+enum class EMovementDirection : uint8
+{
+	None,
+	Fwd,
+	Bwd,
+	Left,
+	Right,
+	End,
+
+};
+
 /**
  * 
  */
@@ -26,6 +48,10 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 	void PlayAnimMontage(class UAnimMontage* InAnimMontage);
+
+	ELocomotionState GetLocomotionState() const { return LocomotionState; }
+
+	EMovementDirection GetMovementDirection() const { return MovementDirection; }
 
 protected:
 	UFUNCTION()
@@ -56,5 +82,17 @@ protected:
 	// 죽음
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SAnimInstance", meta = (AllowPrivateAccess))
 	uint8 bIsDead : 1;
+
+	// 캐릭터 가속도
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SAnimInstance", meta = (AllowPrivateAccess))
+	FVector Acceleration;
+
+	// 상태
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	ELocomotionState LocomotionState;
+
+	// 방향
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	EMovementDirection MovementDirection;
 
 };

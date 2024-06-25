@@ -35,10 +35,10 @@ void USAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	// 예를 들어서 폰이 움직이다가 어떤 경우에 의해 죽었을 때 애니메이션 쪽에선 폰이 없는거나 마찬가지
 	// 그런 경우 nullptr을 가져오기 때문에 이런 위험을 방지하고자 애니메이션 쪽에서는 Try를 붙임
 	ASCharacter* OwnerCharacter = Cast<ASCharacter>(TryGetPawnOwner());
-	if (IsValid(OwnerCharacter) == true)
+	if (true == IsValid(OwnerCharacter))
 	{
 		UCharacterMovementComponent* CharacterMovementComponent = OwnerCharacter->GetCharacterMovement();
-		if (IsValid(CharacterMovementComponent) == true)
+		if (true == IsValid(CharacterMovementComponent))
 		{
 			//CurrentSpeed = CharacterMovementComponent->GetLastUpdateVelocity().Size();
 
@@ -48,6 +48,30 @@ void USAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			bIsCrouching = CharacterMovementComponent->IsCrouching();
 			//bIsDead = OwnerCharacter->IsDead();
 			bIsDead = KINDA_SMALL_NUMBER >= OwnerCharacter->GetStatComponent()->GetCurrentHP();
+			Acceleration = CharacterMovementComponent->GetCurrentAcceleration();
+
+			// 가속도와 속도가 0에 가까운 수치면 Idle, 아니면 Walk
+			if (KINDA_SMALL_NUMBER > Acceleration.Length() && KINDA_SMALL_NUMBER > Velocity.Length())
+			{
+				LocomotionState = ELocomotionState::Idle;
+			}
+			else
+			{
+				LocomotionState = ELocomotionState::Walk;
+			}
+
+			ASViewCharacter* OwnerPlayerCharacter = Cast<ASViewCharacter>(OwnerCharacter);
+			if (true == IsValid(OwnerPlayerCharacter))
+			{
+				// 포워드 양수: 앞
+				if (KINDA_SMALL_NUMBER < OwnerPlayerCharacter->GetForwardInputValue()) MovementDirection = EMovementDirection::Fwd;
+				// 포워드 음수: 뒤
+				if (-KINDA_SMALL_NUMBER > OwnerPlayerCharacter->GetForwardInputValue()) MovementDirection = EMovementDirection::Bwd;
+				// 우측 양수: 오
+				if (KINDA_SMALL_NUMBER < OwnerPlayerCharacter->GetRightInputValue()) MovementDirection = EMovementDirection::Right;
+				// 우측 음수: 왼
+				if (-KINDA_SMALL_NUMBER > OwnerPlayerCharacter->GetRightInputValue()) MovementDirection = EMovementDirection::Left;
+			}
 		}
 	}
 }

@@ -19,6 +19,14 @@ public:
 
 	UAnimMontage* GetMeleeAttackMontage() const { return MeleeAttackMontage; }
 
+	UAnimMontage* GetEquipAnimMontage() const { return EquipAnimMontage; }
+
+	UAnimMontage* GetUnequipAnimMontage() const { return UnequipAnimMontage; }
+
+	TSubclassOf<UAnimInstance> GetUnarmedCharacterAnimLayer() const { return UnarmedCharacterAnimLayer; }
+
+	TSubclassOf<UAnimInstance> GetArmedCharacterAnimLayer() const { return ArmedCharacterAnimLayer; }
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -33,5 +41,18 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	TObjectPtr<UAnimMontage> MeleeAttackMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASWeaponActor|AnimLayer", meta = (AllowPrivateAccess))
+	TSubclassOf<UAnimInstance> UnarmedCharacterAnimLayer;
+
+	// 무기에 따라 달라질 것
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASWeaponActor|AnimLayer", meta = (AllowPrivateAccess))
+	TSubclassOf<UAnimInstance> ArmedCharacterAnimLayer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	TObjectPtr<UAnimMontage> EquipAnimMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	TObjectPtr<UAnimMontage> UnequipAnimMontage;
 
 };
