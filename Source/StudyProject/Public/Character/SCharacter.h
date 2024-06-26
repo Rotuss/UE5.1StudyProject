@@ -66,6 +66,8 @@ public:
 
 	class USStatComponent* GetStatComponent() const { return StatComponent; }
 
+	class ASWeaponActor* GetWeaponInstance() const { return WeaponInstance; }
+
 public:
 	// 런타임 콘솔 디버깅용 변수
 	static int32 ShowAttackDebug;
