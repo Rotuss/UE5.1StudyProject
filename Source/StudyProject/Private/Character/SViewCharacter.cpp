@@ -674,5 +674,10 @@ void ASViewCharacter::TryFire()
             }
         }
 
+        if (true == IsValid(FireShake))
+        {
+            PlayerController->ClientStartCameraShake(FireShake);
+        }
+
     }
 }

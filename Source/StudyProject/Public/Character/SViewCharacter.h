@@ -102,6 +102,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SViewCharacter", meta = (AllowPrivateAccess))
 	TObjectPtr<class UInputMappingContext> PlayerCharacterInputMappingContext;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SViewCharacter", meta = (AllowPrivateAccess))
+	TSubclassOf<UCameraShakeBase> FireShake;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	float ForwardInputValue;
 
