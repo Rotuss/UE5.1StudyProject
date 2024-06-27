@@ -63,6 +63,20 @@ protected:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 private:
+	/* Server RPC의 실행 흐름
+	 1. 특정 작업 실행 조건 시작(키를 누른다거나 이벤트 작용이 된다거나 등)
+	 2. 해당 조건 호출 실행한 Owning Client의 특정 함수 호출
+	 3. 서버로 보내는 패킷에 Server RPC 함수의 정보도 Serialize해서 보냄
+	 4. 서버에서는 패킷을 Deserialize 후 Owning Client의 특정 Server RPC 함수 수행
+	 5. 서버에서 특정 작업(지금 코드에서는 BP_LandMine 스폰)
+	 5-1. 예)BP_LandMine은 Actor Replicates 속성이 true이므로 클라들에게 스폰 정보 복제
+	*/
+	// Server: 서버에서 수행되게하는 키워드
+	// Reliable: 기본 값은 Unreliable(한 번쯤 씹혀도 되는것), 물리 작용 혹은 스폰과 같은 경우에는 Reliable 사용
+	// WithValidation: 검증 및 변조 작업
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SpawnLandMine_Server();
+	
 	UFUNCTION()
 	void OnHittedRagdollRestoreTimerElapsed();
 	
@@ -90,6 +104,8 @@ private:
 
 	void StopFire(const FInputActionValue& InValue);
 
+	void SpawnLandMine(const FInputActionValue& InValue);
+
 	void TryFire();
 
 protected:
@@ -109,6 +125,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SViewCharacter", meta = (AllowPrivateAccess))
 	TSubclassOf<UCameraShakeBase> FireShake;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASViewCharacter", meta = (AllowPrivateAccess))
+	TSubclassOf<AActor> LandMineClass;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	float ForwardInputValue;

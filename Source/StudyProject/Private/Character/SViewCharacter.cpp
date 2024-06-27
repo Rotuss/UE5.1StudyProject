@@ -22,6 +22,7 @@
 #include "Component/SStatComponent.h"
 #include "Controller/SPlayerController.h"
 #include "Game/SPlayerState.h"
+#include "WorldStatic/SLandMine.h"
 #include "SViewCharacterSettings.h"             // 모듈에 추가해줬기 때문에 가능
 
 //int32 ASViewCharacter::ShowAttackDebug = 0;
@@ -374,7 +375,27 @@ void ASViewCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->Trigger, ETriggerEvent::Started, this, &ThisClass::ToggleTrigger);
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->Attack, ETriggerEvent::Started, this, &ThisClass::StartFire);
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->Attack, ETriggerEvent::Completed, this, &ThisClass::StopFire);
+        EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->LandMine, ETriggerEvent::Started, this, &ThisClass::SpawnLandMine);
     }
+}
+
+// WithValidation 사용시
+// Validate: 변위조 검증 조건 담당
+bool ASViewCharacter::SpawnLandMine_Server_Validate()
+{
+    return true;
+}
+
+// Implementation: 로직 구현 담당
+void ASViewCharacter::SpawnLandMine_Server_Implementation()
+{
+    if (true == IsValid(LandMineClass))
+    {
+        FVector SpawnedLocation = (GetActorLocation() + GetActorForwardVector() * 200.0f) - FVector(0.0f, 0.0f, 90.0f);
+        ASLandMine* SpawnedLandMine = GetWorld()->SpawnActor<ASLandMine>(LandMineClass, SpawnedLocation, FRotator::ZeroRotator);
+        SpawnedLandMine->SetOwner(GetController());
+    }
+
 }
 
 void ASViewCharacter::OnHittedRagdollRestoreTimerElapsed()
@@ -649,6 +670,21 @@ void ASViewCharacter::StopFire(const FInputActionValue& InValue)
 {
     // 타이머 정리
     GetWorldTimerManager().ClearTimer(BetweenShotsTimer);
+
+}
+
+void ASViewCharacter::SpawnLandMine(const FInputActionValue& InValue)
+{
+    /*if (true == IsValid(LandMineClass))
+    {
+        FVector SpawnedLocation = (GetActorLocation() + GetActorForwardVector() * 300.0f) - FVector(0.0f, 0.0f, 90.0f);
+        ASLandMine* SpawnedLandMine = GetWorld()->SpawnActor<ASLandMine>(LandMineClass, SpawnedLocation, FRotator::ZeroRotator);
+        SpawnedLandMine->SetOwner(GetController());
+
+    }*/
+
+    // 호출은 Owning Client, 수행은 Server
+    SpawnLandMine_Server();
 
 }
 
