@@ -38,6 +38,8 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
 	void SetViewMode(EViewMode InViewMode);
 
 	void SetMeshMaterial(const EPlayerTeam& InPlayerTeam);
@@ -61,6 +63,9 @@ protected:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 private:
+	UFUNCTION()
+	void OnHittedRagdollRestoreTimerElapsed();
+	
 	void Move(const FInputActionValue& InValue);
 
 	void Look(const FInputActionValue& InValue);
@@ -126,6 +131,11 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 MaxKillCount = 99;*/
 
+	FTimerDelegate HittedRagdollRestoreTimerDelegate;
+
+	// 피격 랙돌을 위한 타이머 핸들
+	FTimerHandle HittedRagdollRestoreTimer;
+
 	FTimerHandle BetweenShotsTimer;
 
 	// UPROPERTY() 매크로를 사용하지 않으므로 초기화에 유념해야함
@@ -148,5 +158,10 @@ private:
 
 	float CurrentAimPitch = 0.0f;
 	float CurrentAimYaw = 0.0f;
+
+	// 랙돌 보간 작업
+	float TargetRagDollBlendWeight = 0.0f;
+	float CurrentRagDollBlendWeight = 0.0f;
+	bool bIsNowRagdollBlending = false;
 
 };

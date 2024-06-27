@@ -119,6 +119,34 @@ void ASViewCharacter::Tick(float DeltaTime)
         CurrentAimYaw = ControlRotation.Yaw;
     }
 
+    // 블렌딩 작업 bool 값이 켜져 있다면
+    if (true == bIsNowRagdollBlending)
+    {
+        CurrentRagDollBlendWeight = FMath::FInterpTo(CurrentRagDollBlendWeight, TargetRagDollBlendWeight, DeltaTime, 10.0f);
+
+        FName PivotBoneName = FName(TEXT("spine_01"));
+        // 본에 관해 어느 정도 랙돌을 작동 시킬 것인가
+        GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(PivotBoneName, CurrentRagDollBlendWeight);
+
+        // 블렌드 수치 적용 연산을 통해 0에 가까운 수치(보간 끝)가 되면 랙돌 끄기 
+        if (KINDA_SMALL_NUMBER > CurrentRagDollBlendWeight - TargetRagDollBlendWeight)
+        {
+            GetMesh()->SetAllBodiesBelowSimulatePhysics(PivotBoneName, false);
+            bIsNowRagdollBlending = false;
+        }
+
+        // HP가 0에 가깝다면
+        if (true == IsValid(GetStatComponent()) && KINDA_SMALL_NUMBER > GetStatComponent()->GetCurrentHP())
+        {
+            // 모든 본에 랙돌 가중치(기존에 상체만 주던 것을 전체인 root로 잡아줌)
+            GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(FName(TEXT("root")), 1.0f);
+            GetMesh()->SetSimulatePhysics(true);
+            // 다음 Tick에서 걸리지 않게 false
+            bIsNowRagdollBlending = false;
+        }
+
+    }
+
     return;
 
     switch (CurrentViewMode)
@@ -152,6 +180,43 @@ void ASViewCharacter::Tick(float DeltaTime)
         SpringArmComponent->TargetArmLength = FMath::FInterpTo(SpringArmComponent->TargetArmLength, DestArmLength, DeltaTime, ArmLengthChangeSpeed);
         SpringArmComponent->SetRelativeRotation(FMath::RInterpTo(SpringArmComponent->GetRelativeRotation(), DestArmRotation, DeltaTime, ArmRotationChangeSpeed));
     }
+}
+
+float ASViewCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+    float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+    if (false == IsValid(GetStatComponent())) return FinalDamage;
+
+    // 현재 HP가 0에 가까운 상태라면
+    if (KINDA_SMALL_NUMBER > GetStatComponent()->GetCurrentHP())
+    {
+        // 완전 랙돌 상태 On
+        GetMesh()->SetSimulatePhysics(true);
+    }
+    // 맞았지만 아직 HP가 남아있다면
+    else
+    {
+        // 상체를 기준으로 하는 본 이름
+        FName PivotBoneName = FName(TEXT("spine_01"));
+        // 본 네임을 통해 해당 본은 시뮬레이션 피직스 키기
+        GetMesh()->SetAllBodiesBelowSimulatePhysics(PivotBoneName, true);
+
+        // 랙돌 포즈에 완전 치우쳐지게끔 가중치를 1.0f로 지정
+        // 즉 해당 부분은 랙돌 상태
+        //float BlendWeight = 1.0f; 
+        //GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(PivotBoneName, BlendWeight);
+
+        // 1: 랙돌 키기, 0: 랙돌 끄기
+        TargetRagDollBlendWeight = 1.0f;
+
+        // 타이머 관련 델리게이트 바인드 작업
+        HittedRagdollRestoreTimerDelegate.BindUObject(this, &ThisClass::OnHittedRagdollRestoreTimerElapsed);
+        // 타이머 시간이 되면 작동해야 되는 함수 호출
+        GetWorld()->GetTimerManager().SetTimer(HittedRagdollRestoreTimer, HittedRagdollRestoreTimerDelegate, 1.0f, false);
+    }
+
+    return FinalDamage;
 }
 
 void ASViewCharacter::SetViewMode(EViewMode InViewMode)
@@ -306,6 +371,26 @@ void ASViewCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->Attack, ETriggerEvent::Started, this, &ThisClass::StartFire);
         EnhancedInputComponent->BindAction(PlayerCharacterInputConfigData->Attack, ETriggerEvent::Completed, this, &ThisClass::StopFire);
     }
+}
+
+void ASViewCharacter::OnHittedRagdollRestoreTimerElapsed()
+{
+    // 상체를 기준으로 하는 본 이름
+    FName PivotBoneName = FName(TEXT("spine_01"));
+    // 본 네임을 통해 해당 본은 시뮬레이션 피직스 끄기
+    //GetMesh()->SetAllBodiesBelowSimulatePhysics(PivotBoneName, false);
+
+    //float BlendWeight = 0.0f;
+    // 애니메이션 관련 혼합 작업
+    // PivotBoneName을 1을 주면 랙돌만 켜짐, 0을 주면 애니메이션 켜짐
+    // 즉 해당 부분은 애니메이션 상태
+    //GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(PivotBoneName, BlendWeight);
+
+    // 0: 랙돌 끄기, 1: 랙돌 키기
+    TargetRagDollBlendWeight = 0.0f;
+    CurrentRagDollBlendWeight = 1.0f;
+    bIsNowRagdollBlending = true;
+
 }
 
 void ASViewCharacter::Move(const FInputActionValue& InValue)
