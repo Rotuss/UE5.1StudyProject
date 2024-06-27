@@ -746,7 +746,24 @@ void ASViewCharacter::TryFire()
             if (true == IsValid(HittedCharacter))
             {
                 FDamageEvent DamageEvent;
-                HittedCharacter->TakeDamage(10.0f, DamageEvent, GetController(), this);
+                //HittedCharacter->TakeDamage(10.0f, DamageEvent, GetController(), this);
+
+                // 기존 작업: BoneNameString 출력 확인하면 None으로 뜸 -> 메시 기준이 아닌 캡슐 컴포넌트에 충돌되고 있기 때문
+                // 수정 작업: SCharacter Attack을 무시하고 CharacterMesh에서 블록되게 설정하여 좀 더 세밀한 부위 판정으로 되게끔 변경
+                FString BoneNameString = HitResult.BoneName.ToString();
+                //UKismetSystemLibrary::PrintString(this, BoneNameString);
+                //DrawDebugSphere(GetWorld(), HitResult.Location, 3.0f, 16, FColor(255, 0, 0, 255), true, 20.0f, 0U, 5.0f);
+
+                // 헤드샷 대미지
+                if (true == BoneNameString.Equals(FString(TEXT("HEAD")), ESearchCase::IgnoreCase))
+                {
+                    HittedCharacter->TakeDamage(100.0f, DamageEvent, GetController(), this);
+                }
+                // 일반 피격 대미지
+                else
+                {
+                    HittedCharacter->TakeDamage(10.0f, DamageEvent, GetController(), this);
+                }
             }
         }
 
