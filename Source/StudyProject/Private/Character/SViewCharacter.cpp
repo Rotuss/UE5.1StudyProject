@@ -89,8 +89,12 @@ void ASViewCharacter::BeginPlay()
     //        })
     //);
 
+    // 클라에서도 적용되게 BeginPlay에서 세팅
+    SetViewMode(EViewMode::TPSView);
+
 }
 
+// 서버에서만 돌아가는 로직
 void ASViewCharacter::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
@@ -99,7 +103,7 @@ void ASViewCharacter::PossessedBy(AController* NewController)
     //SetViewMode(EViewMode::BackView);
     //DestArmLength = 400.0f; // 초기화에서 한 번 지정해야 함
     //DestArmRotation = FRotator::ZeroRotator; // 백뷰에서는 의미가 없으므로
-    SetViewMode(EViewMode::TPSView);
+    //SetViewMode(EViewMode::TPSView);         // 따라서 클라에서는 돌아가지 않게 됨
 }
 
 void ASViewCharacter::Tick(float DeltaTime)

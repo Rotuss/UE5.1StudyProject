@@ -91,6 +91,8 @@ void ASNonViewCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	// 서버에서도 같이 돌아간다는 문제가 존재
+	// NPC를 사용하고 있진 않으므로 보류
 	if (true == IsValid(WidgetComponent))
 	{
 		// 빌보드를 아예 안 쓸 수는 없음 따라서 현재 내 플레이어를 바라보게 만들어줘야 함

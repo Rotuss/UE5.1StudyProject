@@ -107,6 +107,13 @@ void ASPlayerController::BeginPlay()
     FInputModeGameOnly InputModeGameOnly;
     SetInputMode(InputModeGameOnly);
 
+    // 서버와 클라가 같이 작동 => UI 문제 발생
+    // OwningClient: 내(현 유저, 플레이어) 컴퓨터
+    // OtherClient: OwningClient을 제외한 다른 컴퓨터들, 서버 컴퓨터
+    // 내 UI는 나한테만 보이면 됨, 따라서 UI는 OwningClient에서만 있으면 됨
+    // 따라서 서버는 막아주는 작업
+    if (true == HasAuthority()) return;
+
     if (true == IsValid(HUDWidgetClass))
     {
         // HUD 위젯 생성
