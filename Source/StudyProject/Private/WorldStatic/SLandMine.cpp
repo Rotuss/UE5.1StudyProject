@@ -2,6 +2,8 @@
 
 
 #include "WorldStatic/SLandMine.h"
+#include "Net/UnrealNetwork.h"
+#include "Engine/Engine.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/BoxComponent.h"
@@ -10,6 +12,7 @@
 
 // Sets default values
 ASLandMine::ASLandMine()
+    : bIsExploded(false)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -101,10 +104,20 @@ void ASLandMine::Tick(float DeltaTime)
 
 }
 
+void ASLandMine::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    // bIsExploded가 Replicated 될 리스트에 추가
+    // 즉 해당 Actor가 Replicated되면 같이 되게 등록을 시키는 것과 같다고 보면 됨
+    DOREPLIFETIME(ThisClass, bIsExploded);
+
+}
+
 void ASLandMine::OnLandMineBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
 {
     // 확인 작업
-    if (true == HasAuthority())
+    /*if (true == HasAuthority())
     {
         UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("ASLandMine::OnLandMineBeginOverlap() has been called in Server PC.")));
     }
@@ -118,11 +131,20 @@ void ASLandMine::OnLandMineBeginOverlap(AActor* OverlappedActor, AActor* OtherAc
         {
             UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("ASLandMine::OnLandMineBeginOverlap() has been called in OtherClient PC.")));
         }
-    }
+    }*/
 
     // 서버에서 호출이 됐다면 SpawnEffect_NetMulticast()
     // NetMulticast는 서버에서만 호출 가능
-    if (true == HasAuthority()) SpawnEffect_NetMulticast();
+    if (true == HasAuthority() && false == bIsExploded)
+    {
+        SpawnEffect_NetMulticast();
+        bIsExploded = true;
+    }
+}
+
+void ASLandMine::OnRep_IsExploded()
+{
+    if (true == bIsExploded) BodyStaticMeshComponent->SetMaterial(0, ExplodedMaterial);
 
 }
 
@@ -131,6 +153,12 @@ void ASLandMine::SpawnEffect_NetMulticast_Implementation()
     // 파티클 작동이 서버에서도 적용될 필요가 없음(프로젝트가 커서 사용량이 많아지면 과부하 발생할 수 있음)
     // 따라서 서버가 아닌 PC에서 작동되게 false == HasAuthority() 조건 걸기
     if(false == HasAuthority()) ParticleSystemComponent->Activate(true);
+
+    if (true == IsValid(ExplodedMaterial))
+    {
+        BodyStaticMeshComponent->SetMaterial(0, ExplodedMaterial);
+
+    }
 
 }
 
