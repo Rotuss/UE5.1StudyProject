@@ -25,11 +25,21 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION()
+	void OnLandMineBeginOverlap(AActor* OverlappedActor, AActor* OtherActor);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void SpawnEffect_NetMulticast();
+
+
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASLandMine", meta = (AllowPrivateAccess))
 	TObjectPtr<class UBoxComponent> BodyBoxComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASLandMine", meta = (AllowPrivateAccess))
 	TObjectPtr<UStaticMeshComponent> BodyStaticMeshComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASLandMine", meta = (AllowPrivateAccess))
+	TObjectPtr<UParticleSystemComponent> ParticleSystemComponent;
 
 };
