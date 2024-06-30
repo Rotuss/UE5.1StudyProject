@@ -109,6 +109,9 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void DrawLine_NetMulticast(const FVector& InDrawStart, const FVector& InDrawEnd);
 
+	UFUNCTION(NetMulticast, Unreliable)
+	void PlayRagdoll_NetMulticast();
+
 	UFUNCTION()
 	void OnHittedRagdollRestoreTimerElapsed();
 	

@@ -224,35 +224,38 @@ float ASViewCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 {
     float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-    if (false == IsValid(GetStatComponent())) return FinalDamage;
+    // 해당 주석 부분은 NetMulticast에서 작동되게 이동
+    //if (false == IsValid(GetStatComponent())) return FinalDamage;
 
-    // 현재 HP가 0에 가까운 상태라면
-    if (KINDA_SMALL_NUMBER > GetStatComponent()->GetCurrentHP())
-    {
-        // 완전 랙돌 상태 On
-        GetMesh()->SetSimulatePhysics(true);
-    }
-    // 맞았지만 아직 HP가 남아있다면
-    else
-    {
-        // 상체를 기준으로 하는 본 이름
-        FName PivotBoneName = FName(TEXT("spine_01"));
-        // 본 네임을 통해 해당 본은 시뮬레이션 피직스 키기
-        GetMesh()->SetAllBodiesBelowSimulatePhysics(PivotBoneName, true);
+    //// 현재 HP가 0에 가까운 상태라면
+    //if (KINDA_SMALL_NUMBER > GetStatComponent()->GetCurrentHP())
+    //{
+    //    // 완전 랙돌 상태 On
+    //    GetMesh()->SetSimulatePhysics(true);
+    //}
+    //// 맞았지만 아직 HP가 남아있다면
+    //else
+    //{
+    //    // 상체를 기준으로 하는 본 이름
+    //    FName PivotBoneName = FName(TEXT("spine_01"));
+    //    // 본 네임을 통해 해당 본은 시뮬레이션 피직스 키기
+    //    GetMesh()->SetAllBodiesBelowSimulatePhysics(PivotBoneName, true);
 
-        // 랙돌 포즈에 완전 치우쳐지게끔 가중치를 1.0f로 지정
-        // 즉 해당 부분은 랙돌 상태
-        //float BlendWeight = 1.0f; 
-        //GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(PivotBoneName, BlendWeight);
+    //    // 랙돌 포즈에 완전 치우쳐지게끔 가중치를 1.0f로 지정
+    //    // 즉 해당 부분은 랙돌 상태
+    //    //float BlendWeight = 1.0f; 
+    //    //GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(PivotBoneName, BlendWeight);
 
-        // 1: 랙돌 키기, 0: 랙돌 끄기
-        TargetRagDollBlendWeight = 1.0f;
+    //    // 1: 랙돌 키기, 0: 랙돌 끄기
+    //    TargetRagDollBlendWeight = 1.0f;
 
-        // 타이머 관련 델리게이트 바인드 작업
-        HittedRagdollRestoreTimerDelegate.BindUObject(this, &ThisClass::OnHittedRagdollRestoreTimerElapsed);
-        // 타이머 시간이 되면 작동해야 되는 함수 호출
-        GetWorld()->GetTimerManager().SetTimer(HittedRagdollRestoreTimer, HittedRagdollRestoreTimerDelegate, 1.0f, false);
-    }
+    //    // 타이머 관련 델리게이트 바인드 작업
+    //    HittedRagdollRestoreTimerDelegate.BindUObject(this, &ThisClass::OnHittedRagdollRestoreTimerElapsed);
+    //    // 타이머 시간이 되면 작동해야 되는 함수 호출
+    //    GetWorld()->GetTimerManager().SetTimer(HittedRagdollRestoreTimer, HittedRagdollRestoreTimerDelegate, 1.0f, false);
+    //}
+
+    PlayRagdoll_NetMulticast();
 
     return FinalDamage;
 }
@@ -585,6 +588,35 @@ void ASViewCharacter::DrawLine_NetMulticast_Implementation(const FVector& InDraw
     {
         DrawDebugLine(GetWorld(), WeaponInstance->GetMesh()->GetSocketLocation(TEXT("MuzzleFlash")), InDrawEnd, FColor(255, 255, 255, 64), false, 0.1f, 0U, 0.5f);
     
+    }
+
+}
+
+void ASViewCharacter::PlayRagdoll_NetMulticast_Implementation()
+{
+    if (false == IsValid(GetStatComponent())) return;
+
+    // 현재 HP가 0에 가까운 상태라면
+    if (KINDA_SMALL_NUMBER > GetStatComponent()->GetCurrentHP())
+    {
+        // 완전 랙돌 상태 On
+        GetMesh()->SetSimulatePhysics(true);
+    }
+    // 맞았지만 아직 HP가 남아있다면
+    else
+    { 
+        // 상체를 기준으로 하는 본 이름
+        FName PivotBoneName = FName(TEXT("spine_01"));
+        // 본 네임을 통해 해당 본은 시뮬레이션 피직스 키기
+        GetMesh()->SetAllBodiesBelowSimulatePhysics(PivotBoneName, true);
+
+        // 1: 랙돌 키기, 0: 랙돌 끄기
+        TargetRagDollBlendWeight = 1.0f;
+
+        // 타이머 관련 델리게이트 바인드 작업
+        HittedRagdollRestoreTimerDelegate.BindUObject(this, &ThisClass::OnHittedRagdollRestoreTimerElapsed);
+        // 타이머 시간이 되면 작동해야 되는 함수 호출
+        GetWorld()->GetTimerManager().SetTimer(HittedRagdollRestoreTimer, HittedRagdollRestoreTimerDelegate, 1.0f, false);
     }
 
 }
