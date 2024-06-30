@@ -3,10 +3,10 @@
 
 #include "Character/SViewCharacter.h"
 #include "Components/CapsuleComponent.h"
-#include "GameFramework/SpringArmComponent.h"
-#include "Camera/CameraComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Components/InputComponent.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -15,6 +15,8 @@
 #include "Engine/StreamableManager.h"
 #include "Engine/EngineTypes.h"
 #include "Engine/DamageEvents.h"
+#include "Engine/Engine.h"
+#include "Net/UnrealNetwork.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Input/SInputConfigData.h"
 #include "Item/SWeaponActor.h"
@@ -119,9 +121,39 @@ void ASViewCharacter::Tick(float DeltaTime)
     if (true == IsValid(GetController()))
     {
         // 해당 컨트롤러 정보 관리 => 애니메이션 회전 방향을 위한 작업
+        /*FRotator ControlRotation = GetController()->GetControlRotation();
+        CurrentAimPitch = ControlRotation.Pitch;
+        CurrentAimYaw = ControlRotation.Yaw;*/
+
+        PreviousAimPitch = CurrentAimPitch;
+        PreviousAimYaw = CurrentAimYaw;
+
         FRotator ControlRotation = GetController()->GetControlRotation();
         CurrentAimPitch = ControlRotation.Pitch;
         CurrentAimYaw = ControlRotation.Yaw;
+
+    }
+
+    // Pitch 혹은 Yaw 값이 달라졌을 때 서버에서 처리하여 클라에 뿌리는 작업
+    if (PreviousAimPitch != CurrentAimPitch || PreviousAimYaw != CurrentAimYaw)
+    {
+        if (false == HasAuthority())
+        {
+            UpdateAimValue_Server(CurrentAimPitch, CurrentAimYaw);
+
+        }
+
+    }
+
+    // 앞뒤 혹은 좌우 값이 달라졌을 때 서버에서 처리하여 클라에 뿌리는 작업
+    if (PreviousForwardInputValue != ForwardInputValue || PreviousRightInputValue != RightInputValue)
+    {
+        if (false == HasAuthority())
+        {
+            UpdateInputValue_Server(ForwardInputValue, RightInputValue);
+
+        }
+
     }
 
     // 블렌딩 작업 bool 값이 켜져 있다면
@@ -222,6 +254,16 @@ float ASViewCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
     }
 
     return FinalDamage;
+}
+
+void ASViewCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(ThisClass, ForwardInputValue);
+    DOREPLIFETIME(ThisClass, RightInputValue);
+    DOREPLIFETIME(ThisClass, CurrentAimPitch);
+    DOREPLIFETIME(ThisClass, CurrentAimYaw);
 }
 
 void ASViewCharacter::SetViewMode(EViewMode InViewMode)
@@ -398,6 +440,90 @@ void ASViewCharacter::SpawnLandMine_Server_Implementation()
 
 }
 
+// 클라가 아닌 서버에서 이루어짐
+void ASViewCharacter::SpawnWeaponInstance_Server_Implementation()
+{
+    FName WeaponSocket(TEXT("WeaponSocket"));
+    if (true == GetMesh()->DoesSocketExist(WeaponSocket) && false == IsValid(WeaponInstance))
+    {
+        // 스폰시 WeaponInstance 값 변경
+        // 해당 값이 변경될 때 OnRep_WeaponInstance() 호출되며 Replicated
+        WeaponInstance = GetWorld()->SpawnActor<ASWeaponActor>(WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator);
+        if (true == IsValid(WeaponInstance))
+        {
+            WeaponInstance->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocket);
+        }
+    }
+
+}
+
+// 클라가 아닌 서버에서 이루어짐
+void ASViewCharacter::DestroyWeaponInstance_Server_Implementation()
+{
+    if (true == IsValid(WeaponInstance))
+    {
+        WeaponInstance->Destroy();
+        WeaponInstance = nullptr;
+    }
+}
+
+void ASViewCharacter::OnRep_WeaponInstance()
+{
+    // 스폰이 되었고 복제가 된 상태에서 여기까지 들어왔다
+    if (true == IsValid(WeaponInstance))
+    {
+        // 라이플 애님 레이어로 연결
+        TSubclassOf<UAnimInstance> RifleCharacterAnimLayer = WeaponInstance->GetArmedCharacterAnimLayer();
+        if (true == IsValid(RifleCharacterAnimLayer))
+        {
+            GetMesh()->LinkAnimClassLayers(RifleCharacterAnimLayer);
+        }
+
+        // 장착 몽타주 실행
+        USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
+        if (true == IsValid(AnimInstance) && true == IsValid(WeaponInstance->GetEquipAnimMontage()))
+        {
+            AnimInstance->Montage_Play(WeaponInstance->GetEquipAnimMontage());
+        }
+
+        // 레이어 및 몽타주 저장
+        UnarmedCharacterAnimLayer = WeaponInstance->GetUnarmedCharacterAnimLayer();
+        UnequipAnimMontage = WeaponInstance->GetUnequipAnimMontage();
+
+    }
+    // 장착 해제 과정을 거치면서 DestroyWeaponInstance_Server를 지나 여기로 오면
+    // 이전에 저장해 놓은 레이어 및 몽타주를 실행
+    else
+    {
+        if (true == IsValid(UnarmedCharacterAnimLayer))
+        {
+            GetMesh()->LinkAnimClassLayers(UnarmedCharacterAnimLayer);
+        }
+
+        USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
+        if (true == IsValid(UnequipAnimMontage))
+        {
+            AnimInstance->Montage_Play(UnequipAnimMontage);
+        }
+
+    }
+
+}
+
+void ASViewCharacter::UpdateInputValue_Server_Implementation(const float& InForwardInputValue, const float& InRightInputValue)
+{
+    ForwardInputValue = InForwardInputValue;
+    RightInputValue = InRightInputValue;
+
+}
+
+void ASViewCharacter::UpdateAimValue_Server_Implementation(const float& InAimPitchValue, const float& InAimYawValue)
+{
+    CurrentAimPitch = InAimPitchValue;
+    CurrentAimYaw = InAimYawValue;
+
+}
+
 void ASViewCharacter::OnHittedRagdollRestoreTimerElapsed()
 {
     // 상체를 기준으로 하는 본 이름
@@ -541,29 +667,33 @@ void ASViewCharacter::ChangeView(const FInputActionValue& InValue)
 // 장착 했을 때 소켓을 찾아서 설정
 void ASViewCharacter::InputQuickSlot01(const FInputActionValue& InValue)
 {
-    FName WeaponSocket(TEXT("WeaponSocket"));
-    if (true == GetMesh()->DoesSocketExist(WeaponSocket) && false == IsValid(WeaponInstance))
-    {
-        WeaponInstance = GetWorld()->SpawnActor<ASWeaponActor>(WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator);
-        if (true == IsValid(WeaponInstance))
-        {
-            WeaponInstance->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocket);
-        }
+    // Owner PC에서만 작동
+    //FName WeaponSocket(TEXT("WeaponSocket"));
+    //if (true == GetMesh()->DoesSocketExist(WeaponSocket) && false == IsValid(WeaponInstance))
+    //{
+    //    WeaponInstance = GetWorld()->SpawnActor<ASWeaponActor>(WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator);
+    //    if (true == IsValid(WeaponInstance))
+    //    {
+    //        WeaponInstance->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocket);
+    //    }
 
-        // 레이어 연결(무기O)
-        TSubclassOf<UAnimInstance> RifleCharacterAnimLayer = WeaponInstance->GetArmedCharacterAnimLayer();
-        if (true == IsValid(RifleCharacterAnimLayer))
-        {
-            GetMesh()->LinkAnimClassLayers(RifleCharacterAnimLayer);
-        }
+    //    // 레이어 연결(무기O)
+    //    TSubclassOf<UAnimInstance> RifleCharacterAnimLayer = WeaponInstance->GetArmedCharacterAnimLayer();
+    //    if (true == IsValid(RifleCharacterAnimLayer))
+    //    {
+    //        GetMesh()->LinkAnimClassLayers(RifleCharacterAnimLayer);
+    //    }
 
-        // 무기 장착시 몽타주 실행
-        USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
-        if (true == IsValid(AnimInstance) && true == IsValid(WeaponInstance->GetEquipAnimMontage()))
-        {
-            AnimInstance->Montage_Play(WeaponInstance->GetEquipAnimMontage());
-        }
-    }
+    //    // 무기 장착시 몽타주 실행
+    //    USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
+    //    if (true == IsValid(AnimInstance) && true == IsValid(WeaponInstance->GetEquipAnimMontage()))
+    //    {
+    //        AnimInstance->Montage_Play(WeaponInstance->GetEquipAnimMontage());
+    //    }
+    //}
+
+    SpawnWeaponInstance_Server();
+
 }
 
 // 해제 했을 때 처리
@@ -571,22 +701,26 @@ void ASViewCharacter::InputQuickSlot02(const FInputActionValue& InValue)
 {
     if (true == IsValid(WeaponInstance))
     {
-        // 레이어 연결(무기X)
-        TSubclassOf<UAnimInstance> UnarmedCharacterAnimLayer = WeaponInstance->GetUnarmedCharacterAnimLayer();
-        if (true == IsValid(UnarmedCharacterAnimLayer))
-        {
-            GetMesh()->LinkAnimClassLayers(UnarmedCharacterAnimLayer);
-        }
+        // Owner PC에서만 작동
+        //// 레이어 연결(무기X)
+        //TSubclassOf<UAnimInstance> UnarmedCharacterAnimLayer = WeaponInstance->GetUnarmedCharacterAnimLayer();
+        //if (true == IsValid(UnarmedCharacterAnimLayer))
+        //{
+        //    GetMesh()->LinkAnimClassLayers(UnarmedCharacterAnimLayer);
+        //}
 
-        // 무기 해제시 몽타주 실행
-        USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
-        if (true == IsValid(AnimInstance) && true == IsValid(WeaponInstance->GetUnequipAnimMontage()))
-        {
-            AnimInstance->Montage_Play(WeaponInstance->GetUnequipAnimMontage());
-        }
+        //// 무기 해제시 몽타주 실행
+        //USAnimInstance* AnimInstance = Cast<USAnimInstance>(GetMesh()->GetAnimInstance());
+        //if (true == IsValid(AnimInstance) && true == IsValid(WeaponInstance->GetUnequipAnimMontage()))
+        //{
+        //    AnimInstance->Montage_Play(WeaponInstance->GetUnequipAnimMontage());
+        //}
 
-        WeaponInstance->Destroy();
-        WeaponInstance = nullptr;
+        //WeaponInstance->Destroy();
+        //WeaponInstance = nullptr;
+
+        DestroyWeaponInstance_Server();
+
     }
 }
 

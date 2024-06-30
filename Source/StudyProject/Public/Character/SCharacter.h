@@ -37,6 +37,10 @@ protected:
 	UFUNCTION()
 	void OnCharacterDeath();
 
+	// 하위 플레이어에서 재정의하게끔
+	UFUNCTION()
+	virtual void OnRep_WeaponInstance() {}
+
 	// BeginCombo()에서 이름 변경
 	virtual void BeginAttack();
 
@@ -64,6 +68,8 @@ public:
 
 	virtual void SetWidget(class UStudyWidget* InStudyWidget) {}
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	class USStatComponent* GetStatComponent() const { return StatComponent; }
 
 	class ASWeaponActor* GetWeaponInstance() const { return WeaponInstance; }
@@ -83,7 +89,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	TSubclassOf<class ASWeaponActor> WeaponClass;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	UPROPERTY(ReplicatedUsing = OnRep_WeaponInstance, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	TObjectPtr<class ASWeaponActor> WeaponInstance;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess))

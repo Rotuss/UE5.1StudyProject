@@ -13,6 +13,8 @@ ASWeaponActor::ASWeaponActor()
 	SetRootComponent(Mesh);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	bReplicates = true;
+
 }
 
 // Called when the game starts or when spawned

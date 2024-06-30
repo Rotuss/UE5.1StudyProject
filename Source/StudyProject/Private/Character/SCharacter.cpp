@@ -7,6 +7,8 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Net/UnrealNetwork.h"
+#include "Engine/Engine.h"
 #include "Engine/EngineTypes.h"
 #include "Engine/DamageEvents.h"
 #include "Animation/SAnimInstance.h"
@@ -102,6 +104,14 @@ float ASCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEven
     }
 
     return FinalDamageAmount;
+}
+
+void ASCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(ThisClass, WeaponInstance);
+
 }
 
 void ASCharacter::OnMeleeAttackMontageEnded(UAnimMontage* InMontage, bool bInterruped)

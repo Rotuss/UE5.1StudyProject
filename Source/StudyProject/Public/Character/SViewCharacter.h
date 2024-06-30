@@ -40,6 +40,9 @@ public:
 
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
+	// Replicated 사용하기 위한 작업
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	void SetViewMode(EViewMode InViewMode);
 
 	void SetMeshMaterial(const EPlayerTeam& InPlayerTeam);
@@ -77,6 +80,23 @@ private:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void SpawnLandMine_Server();
 	
+	UFUNCTION(Server, Reliable)
+	void SpawnWeaponInstance_Server();
+
+	UFUNCTION(Server, Reliable)
+	void DestroyWeaponInstance_Server();
+
+	// 재정의
+	virtual void OnRep_WeaponInstance() override;
+
+	// Unreliable를 한 이유: 1 ~ 2번 정도는 씹혀도 되기 때문
+	UFUNCTION(Server, Unreliable) 
+	void UpdateInputValue_Server(const float& InForwardInputValue, const float& InRightInputValue);
+
+	UFUNCTION(Server, Unreliable)
+	void UpdateAimValue_Server(const float& InAimPitchValue, const float& InAimYawValue);
+
+
 	UFUNCTION()
 	void OnHittedRagdollRestoreTimerElapsed();
 	
@@ -123,17 +143,31 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SViewCharacter", meta = (AllowPrivateAccess))
 	TObjectPtr<class UInputMappingContext> PlayerCharacterInputMappingContext;
 
+	// 무기 장착시 몽타주 기억
+	UPROPERTY()
+	TObjectPtr<UAnimMontage> UnequipAnimMontage;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SViewCharacter", meta = (AllowPrivateAccess))
 	TSubclassOf<UCameraShakeBase> FireShake;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASViewCharacter", meta = (AllowPrivateAccess))
 	TSubclassOf<AActor> LandMineClass;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	// 무기 장착시 애니메이션 레이어 기억
+	UPROPERTY()
+	TSubclassOf<UAnimInstance> UnarmedCharacterAnimLayer;
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	float ForwardInputValue;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	float RightInputValue;
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	float CurrentAimPitch = 0.0f;
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	float CurrentAimYaw = 0.0f;
 
 	// 분당 탄환을 몇 번 발사할 것인가
 	// 숫자가 클수록 빠르게 연사
@@ -175,8 +209,11 @@ private:
 	float TimeBetweenFire;
 	bool bIsTriggerToggle = false;
 
-	float CurrentAimPitch = 0.0f;
-	float CurrentAimYaw = 0.0f;
+	// 현재 값과 달라졌을 때 Replicated 하기 위한 작업
+	float PreviousForwardInputValue = 0.0f;
+	float PreviousRightInputValue = 0.0f;
+	float PreviousAimPitch = 0.0f;
+	float PreviousAimYaw = 0.0f;
 
 	// 랙돌 보간 작업
 	float TargetRagDollBlendWeight = 0.0f;
