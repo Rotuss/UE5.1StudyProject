@@ -601,6 +601,7 @@ void ASViewCharacter::PlayRagdoll_NetMulticast_Implementation()
     {
         // 완전 랙돌 상태 On
         GetMesh()->SetSimulatePhysics(true);
+        //StatComponent->SetDead(true);
     }
     // 맞았지만 아직 HP가 남아있다면
     else

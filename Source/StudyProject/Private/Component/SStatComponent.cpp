@@ -5,6 +5,7 @@
 #include "Game/SGameInstance.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/Engine.h"
+//#include "Character/SCharacter.h"
 
 // 이벤트와 같은 기능에서 액터의 스탯이 변경되면 해당 컴포넌트를 업데이트
 // 이후에 위젯 컴포넌트 쪽에서 처리를 받아 위젯 컴포넌트도 업데이트
@@ -19,6 +20,7 @@ USStatComponent::USStatComponent()
 	// ...
 
 	bWantsInitializeComponent = false;
+	//bIsDead = false;
 
 }
 
@@ -58,6 +60,11 @@ void USStatComponent::SetCurrentHP(float InCurrentHP)
 
 }
 
+//void USStatComponent::SetDead(bool InDead)
+//{
+//	bIsDead = InDead;
+//
+//}
 
 // Called when the game starts
 void USStatComponent::BeginPlay()
@@ -97,8 +104,19 @@ void USStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 	DOREPLIFETIME(ThisClass, MaxHP);
 	DOREPLIFETIME(ThisClass, CurrentHP);
+	//DOREPLIFETIME(ThisClass, bIsDead);
 
 }
+
+//void USStatComponent::OnRep_IsDead()
+//{
+//	if (true == bIsDead)
+//	{
+//		// Ragdoll
+//		ASCharacter* Temp = Cast<ASCharacter>(GetOwner());
+//		Temp->GetMesh()->SetSimulatePhysics(true);
+//	}
+//}
 
 void USStatComponent::OnCurrentHPChanged_NetMulticast_Implementation(float InOldCurrentHP, float InNewCurrentHP)
 {

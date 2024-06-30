@@ -24,9 +24,13 @@ public:
 
 	void SetCurrentHP(float InCurrentHP);
 
+	//void SetDead(bool InDead);
+
 	float GetMaxHP() const { return MaxHP; }
 
 	float GetCurrentHP() const { return CurrentHP; }
+
+	//bool IsDead() const { return bIsDead; }
 
 protected:
 	// Called when the game starts
@@ -41,6 +45,9 @@ public:
 private:
 	UFUNCTION(NetMulticast, Reliable)
 	void OnCurrentHPChanged_NetMulticast(float InOldCurrentHP, float InNewCurrentHP);
+
+	/*UFUNCTION()
+	void OnRep_IsDead();*/
 
 public:
 	// 델리게이트에 바인드해 값이 변경될 때마다 UI 업데이트 작업을 위한 부분
@@ -68,5 +75,8 @@ private:
 	// 시리얼라이즈에서 제외시킴
 	UPROPERTY(Replicated, Transient, VisibleInstanceOnly, BlueprintReadOnly, Category = "USStatComponent", meta = (AllowPrivateAccess))
 	float CurrentHP;
+
+	/*UPROPERTY(ReplicatedUsing = OnRep_IsDead, VisibleAnywhere, BlueprintReadOnly, Category = "USStatComponent", meta = (AllowPrivateAccess))
+	bool bIsDead;*/
 
 };
