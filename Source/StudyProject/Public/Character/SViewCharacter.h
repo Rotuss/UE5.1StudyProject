@@ -96,6 +96,11 @@ private:
 	UFUNCTION(Server, Unreliable)
 	void UpdateAimValue_Server(const float& InAimPitchValue, const float& InAimYawValue);
 
+	UFUNCTION(Server, Unreliable)
+	void PlayAttackMontage_Server();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void PlayAttackMontage_NetMulticast();
 
 	UFUNCTION()
 	void OnHittedRagdollRestoreTimerElapsed();

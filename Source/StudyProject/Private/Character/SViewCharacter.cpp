@@ -18,6 +18,7 @@
 #include "Engine/Engine.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include "Input/SInputConfigData.h"
 #include "Item/SWeaponActor.h"
 #include "Animation/SAnimInstance.h"
@@ -524,6 +525,34 @@ void ASViewCharacter::UpdateAimValue_Server_Implementation(const float& InAimPit
 
 }
 
+// 서버에서 NetMulticast 작업
+void ASViewCharacter::PlayAttackMontage_Server_Implementation()
+{
+    PlayAttackMontage_NetMulticast();
+
+}
+
+void ASViewCharacter::PlayAttackMontage_NetMulticast_Implementation()
+{
+    // 서버가 아니고 Other Client일 때만 작동
+    if (false == HasAuthority() && GetOwner() != UGameplayStatics::GetPlayerController(this, 0))
+    {
+        // 몽타주 재생
+        UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+        if (true == IsValid(AnimInstance) && true == IsValid(WeaponInstance))
+        {
+            if (false == AnimInstance->Montage_IsPlaying(WeaponInstance->GetFireAnimMontage()))
+            {
+                AnimInstance->Montage_Play(WeaponInstance->GetFireAnimMontage());
+
+            }
+
+        }
+
+    }
+
+}
+
 void ASViewCharacter::OnHittedRagdollRestoreTimerElapsed()
 {
     // 상체를 기준으로 하는 본 이름
@@ -941,6 +970,7 @@ void ASViewCharacter::TryFire()
             }
         }
 
+        // 1. Owning Client에서도 몽타주 재생
         UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
         if (true == IsValid(AnimInstance) && true == IsValid(WeaponInstance))
         {
@@ -950,7 +980,13 @@ void ASViewCharacter::TryFire()
             }
         }
 
-        if (true == IsValid(FireShake))
+        // 2. Other Client에서도 재생하기 위해 Server RPC 호출
+        // 이전의 무기 장착/해제 몽타주 재생 로직과 이번 Fire 몽타주 재생에서 로직 차이는 Owning Client에서는 몽타주를 재생하고 그 다음 서버 RPC를 호출한다는 차이
+        PlayAttackMontage_Server();
+
+        // FireShake가 유효하고 컨트롤러가 Owner 인 경우에만 흔들 수 있게끔
+        //if (true == IsValid(FireShake))
+        if (true == IsValid(FireShake) && GetOwner() == UGameplayStatics::GetPlayerController(this, 0))
         {
             PlayerController->ClientStartCameraShake(FireShake);
         }
