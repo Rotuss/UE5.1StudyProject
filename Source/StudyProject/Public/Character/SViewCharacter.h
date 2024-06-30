@@ -102,6 +102,13 @@ private:
 	UFUNCTION(NetMulticast, Unreliable)
 	void PlayAttackMontage_NetMulticast();
 
+	// 라인 트레이싱 관련은 Owner에서 대미지 적용은 Server에서
+	UFUNCTION(Server, Reliable)
+	void ApplyDamageAndDrawLine_Server(FHitResult HitResult);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void DrawLine_NetMulticast(const FVector& InDrawStart, const FVector& InDrawEnd);
+
 	UFUNCTION()
 	void OnHittedRagdollRestoreTimerElapsed();
 	

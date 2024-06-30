@@ -54,6 +54,7 @@ ASCharacter::ASCharacter()
 
     //bIsDead = false;
     StatComponent = CreateDefaultSubobject<USStatComponent>(TEXT("StatComponent"));
+    StatComponent->SetIsReplicated(true);
 
 }
 

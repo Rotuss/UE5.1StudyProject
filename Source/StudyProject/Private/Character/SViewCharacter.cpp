@@ -553,6 +553,42 @@ void ASViewCharacter::PlayAttackMontage_NetMulticast_Implementation()
 
 }
 
+void ASViewCharacter::ApplyDamageAndDrawLine_Server_Implementation(FHitResult HitResult)
+{
+    // HittedCharacter(맞은 Actor)
+    ASCharacter* HittedCharacter = Cast<ASCharacter>(HitResult.GetActor());
+    if (true == IsValid(HittedCharacter))
+    {
+        FDamageEvent DamageEvent;
+        FString BoneNameString = HitResult.BoneName.ToString();
+
+        // 대미지 적용 로직
+        if (true == BoneNameString.Equals(FString(TEXT("HEAD")), ESearchCase::IgnoreCase))
+        {
+            HittedCharacter->TakeDamage(100.f, DamageEvent, GetController(), this);
+        }
+        else
+        {
+            HittedCharacter->TakeDamage(10.f, DamageEvent, GetController(), this);
+        }
+
+    }
+
+    DrawLine_NetMulticast(HitResult.TraceStart, HitResult.TraceEnd);
+
+}
+
+void ASViewCharacter::DrawLine_NetMulticast_Implementation(const FVector& InDrawStart, const FVector& InDrawEnd)
+{
+    // 서버가 아닌 다른 클라에서는 드로우 라인으로 표시
+    if (false == HasAuthority())
+    {
+        DrawDebugLine(GetWorld(), WeaponInstance->GetMesh()->GetSocketLocation(TEXT("MuzzleFlash")), InDrawEnd, FColor(255, 255, 255, 64), false, 0.1f, 0U, 0.5f);
+    
+    }
+
+}
+
 void ASViewCharacter::OnHittedRagdollRestoreTimerElapsed()
 {
     // 상체를 기준으로 하는 본 이름
@@ -943,32 +979,36 @@ void ASViewCharacter::TryFire()
 
 #pragma endregion
 
-        if (true == IsCollided)
-        {
-            ASCharacter* HittedCharacter = Cast<ASCharacter>(HitResult.GetActor());
-            if (true == IsValid(HittedCharacter))
-            {
-                FDamageEvent DamageEvent;
-                //HittedCharacter->TakeDamage(10.0f, DamageEvent, GetController(), this);
+        // 서버에서 적용 시켜주게 되는 부분
+        //if (true == IsCollided)
+        //{
+        //    ASCharacter* HittedCharacter = Cast<ASCharacter>(HitResult.GetActor());
+        //    if (true == IsValid(HittedCharacter))
+        //    {
+        //        FDamageEvent DamageEvent;
+        //        //HittedCharacter->TakeDamage(10.0f, DamageEvent, GetController(), this);
 
-                // 기존 작업: BoneNameString 출력 확인하면 None으로 뜸 -> 메시 기준이 아닌 캡슐 컴포넌트에 충돌되고 있기 때문
-                // 수정 작업: SCharacter Attack을 무시하고 CharacterMesh에서 블록되게 설정하여 좀 더 세밀한 부위 판정으로 되게끔 변경
-                FString BoneNameString = HitResult.BoneName.ToString();
-                //UKismetSystemLibrary::PrintString(this, BoneNameString);
-                //DrawDebugSphere(GetWorld(), HitResult.Location, 3.0f, 16, FColor(255, 0, 0, 255), true, 20.0f, 0U, 5.0f);
+        //        // 기존 작업: BoneNameString 출력 확인하면 None으로 뜸 -> 메시 기준이 아닌 캡슐 컴포넌트에 충돌되고 있기 때문
+        //        // 수정 작업: SCharacter Attack을 무시하고 CharacterMesh에서 블록되게 설정하여 좀 더 세밀한 부위 판정으로 되게끔 변경
+        //        FString BoneNameString = HitResult.BoneName.ToString();
+        //        //UKismetSystemLibrary::PrintString(this, BoneNameString);
+        //        //DrawDebugSphere(GetWorld(), HitResult.Location, 3.0f, 16, FColor(255, 0, 0, 255), true, 20.0f, 0U, 5.0f);
 
-                // 헤드샷 대미지
-                if (true == BoneNameString.Equals(FString(TEXT("HEAD")), ESearchCase::IgnoreCase))
-                {
-                    HittedCharacter->TakeDamage(100.0f, DamageEvent, GetController(), this);
-                }
-                // 일반 피격 대미지
-                else
-                {
-                    HittedCharacter->TakeDamage(10.0f, DamageEvent, GetController(), this);
-                }
-            }
-        }
+        //        // 헤드샷 대미지
+        //        if (true == BoneNameString.Equals(FString(TEXT("HEAD")), ESearchCase::IgnoreCase))
+        //        {
+        //            HittedCharacter->TakeDamage(100.0f, DamageEvent, GetController(), this);
+        //        }
+        //        // 일반 피격 대미지
+        //        else
+        //        {
+        //            HittedCharacter->TakeDamage(10.0f, DamageEvent, GetController(), this);
+        //        }
+        //    }
+        //}
+
+        // 위 주석 코드를 서버에서 작동하게끔 호출
+        ApplyDamageAndDrawLine_Server(HitResult);
 
         // 1. Owning Client에서도 몽타주 재생
         UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();

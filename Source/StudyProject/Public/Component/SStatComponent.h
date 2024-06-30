@@ -36,6 +36,12 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+
+private:
+	UFUNCTION(NetMulticast, Reliable)
+	void OnCurrentHPChanged_NetMulticast(float InOldCurrentHP, float InNewCurrentHP);
+
 public:
 	// 델리게이트에 바인드해 값이 변경될 때마다 UI 업데이트 작업을 위한 부분
 	// UI에서 Tick을 통해 계속해서 Get Set함수를 통해 처리할 수 있지만 그럴 경우 부하가 걸릴 수 있음
@@ -52,7 +58,7 @@ private:
 	TObjectPtr<class USGameInstance> GameInstance;
 
 	// 체력을 갖고 있는 이유는 플레이어 캐릭터 뿐만 아니라 몬스터도 체력을 보유하고 있기 때문, 즉 동일한 작업을 요하기 때문
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "USStatComponent", meta = (AllowPrivateAccess))
+	UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "USStatComponent", meta = (AllowPrivateAccess))
 	float MaxHP;
 
 	// Transient란? 단순히 말해서 저장을 안 하는 것과 같음. 즉 Transient을 갖고 있는 속성은 개체 외에도 어디서든 저장을 안하고
@@ -60,7 +66,7 @@ private:
 	// 메모리적 측면에서 유용 휘발성이 있으므로!
 	// Transient의 경우 개체마다 다르게 돌아가는 것(현재체력과 같은, 대부분 Current를 붙이면 쓴다고 생각하면 됨)
 	// 시리얼라이즈에서 제외시킴
-	UPROPERTY(Transient, VisibleInstanceOnly, BlueprintReadOnly, Category = "USStatComponent", meta = (AllowPrivateAccess))
+	UPROPERTY(Replicated, Transient, VisibleInstanceOnly, BlueprintReadOnly, Category = "USStatComponent", meta = (AllowPrivateAccess))
 	float CurrentHP;
 
 };
