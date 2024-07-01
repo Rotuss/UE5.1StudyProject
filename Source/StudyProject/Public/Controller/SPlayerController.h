@@ -22,6 +22,8 @@ public:
 
     virtual void PlayerTick(float DeltaSeconds) override;
 
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
     class USHUD* GetHUDWidget() const { return HUDWidget; };
 
     void ToggleInGameMenu();
@@ -36,6 +38,11 @@ protected:
     virtual void BeginPlay() override;
 
     virtual void EndPlay(EEndPlayReason::Type EndPlayReason) override;
+
+public:
+    // 해당 Text가 NotificationTextUI로 지정(연결해주는 역할)
+    UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "ASPlayerController", meta = (AllowPrivateAccess))
+    FText NotificationText;
 
 private:
     UPROPERTY();
@@ -52,6 +59,9 @@ private:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ASPlayerController", meta = (AllowPrivateAccess))
     TObjectPtr<UUserWidget> InGameMenuInstance;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASPlayerController", meta = (AllowPrivateAccess))
+    TSubclassOf<UUserWidget> NotificationTextUI;
 
     bool bIsInGameMenuOn = false;
 

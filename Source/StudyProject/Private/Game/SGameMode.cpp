@@ -71,4 +71,25 @@ void ASGameMode::PostLogin(APlayerController* NewPlayer)
 		PlayerState->InitPlayerState();
 	}
 
+	ASPlayerController* NewPlayerController = Cast<ASPlayerController>(NewPlayer);
+	if (true == IsValid(NewPlayerController))
+	{
+		AlivePlayerControllers.Add(NewPlayerController);
+		// 로그인 후 서버 접속 표시 알림
+		NewPlayerController->NotificationText = FText::FromString(TEXT("Connected to the game server."));
+	}
+
+}
+
+void ASGameMode::Logout(AController* Exiting)
+{
+	Super::Logout(Exiting);
+
+	ASPlayerController* ExitingPlayerController = Cast<ASPlayerController>(Exiting);
+	if (true == IsValid(ExitingPlayerController) && INDEX_NONE != AlivePlayerControllers.Find(ExitingPlayerController))
+	{
+		AlivePlayerControllers.Remove(ExitingPlayerController);
+		DeadPlayerControllers.Add(ExitingPlayerController);
+	}
+
 }

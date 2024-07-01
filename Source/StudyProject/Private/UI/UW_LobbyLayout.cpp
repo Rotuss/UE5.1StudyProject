@@ -9,6 +9,7 @@
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Controller/SUIPlayerController.h"
 
 void UUW_LobbyLayout::NativeOnInitialized()
 {
@@ -101,5 +102,14 @@ void UUW_LobbyLayout::OnSubmitButtonClicked()
     }
 
     // 타이틀 레벨에서 작업했던 오픈레벨 파싱 작업
-    UGameplayStatics::OpenLevel(GetWorld(), TEXT("Loading"), true, FString(TEXT("NextLevel=Example")));
+    //UGameplayStatics::OpenLevel(GetWorld(), TEXT("Loading"), true, FString(TEXT("NextLevel=Example")));
+    // 기존 Level 여는 형식이 아닌 IP 서버 연결
+    ASUIPlayerController* PlayerController = GetOwningPlayer<ASUIPlayerController>();
+    if (true == IsValid(PlayerController))
+    {
+        FText ServerIP = EditServerIP->GetText();
+        PlayerController->JoinServer(ServerIP.ToString());
+
+    }
+
 }

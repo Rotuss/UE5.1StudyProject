@@ -44,6 +44,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "USLobbyLevelUI", meta = (AllowPrivateAccess, BindWidget))
 	TObjectPtr<class UButton> SubmitButton;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "USLobbyLevelUI", meta = (AllowPrivateAccess, BindWidget))
+	TObjectPtr<UEditableText> EditServerIP;
+
 	TWeakObjectPtr<USkeletalMeshComponent> CurrentSkeletalMeshComponent;
 
 	// 이 메시가 필요해 이 마테리얼이 필요해 하고 로딩해줘 할 때 취하기 위한 핸들

@@ -3,6 +3,7 @@
 
 #include "Controller/SUIPlayerController.h"
 #include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
 
 void ASUIPlayerController::BeginPlay()
 {
@@ -26,5 +27,14 @@ void ASUIPlayerController::BeginPlay()
 			bShowMouseCursor = true;
 		}
 	}
+
+}
+
+// 받아온 InIPAddress로 열기
+void ASUIPlayerController::JoinServer(const FString& InIPAddress)
+{
+	// NextLevel=%s => 입력 받은 IP로 열겠다
+	// Saved=false => 저장한 것을 불러 올 것인가 사용하지 않을 것인가
+	UGameplayStatics::OpenLevel(GetWorld(), TEXT("Loading"), true, FString::Printf(TEXT("NextLevel=%s?Saved=false"), *InIPAddress));
 
 }

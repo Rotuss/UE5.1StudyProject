@@ -7,6 +7,8 @@
 #include "Blueprint/UserWidget.h"
 #include "Component/SStatComponent.h"
 #include "Character/SCharacter.h"
+#include "Net/UnrealNetwork.h"
+#include "Engine/Engine.h"
 
 ASPlayerController::ASPlayerController()
 {
@@ -35,6 +37,14 @@ void ASPlayerController::PlayerTick(float DeltaSeconds)
         UE_LOG(LogTemp, Warning, TEXT("       End   ASPlayerController::PlayerTick()"));
         bOnce = true;
     }*/
+}
+
+void ASPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(ThisClass, NotificationText);
+
 }
 
 void ASPlayerController::ToggleInGameMenu()
@@ -162,6 +172,16 @@ void ASPlayerController::BeginPlay()
         {
             CrosshairUIInstance->AddToViewport(1);
             CrosshairUIInstance->SetVisibility(ESlateVisibility::Visible);
+        }
+    }
+
+    if (true == IsValid(NotificationTextUI))
+    {
+        UUserWidget* NewNotificationTextUI = CreateWidget<UUserWidget>(this, NotificationTextUI);
+        if (true == IsValid(NewNotificationTextUI))
+        {
+            NewNotificationTextUI->AddToViewport(1);
+            NewNotificationTextUI->SetVisibility(ESlateVisibility::Visible);
         }
     }
 

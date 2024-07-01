@@ -69,4 +69,13 @@ public:
 
     virtual void PostLogin(APlayerController* NewPlayer) override;
 
+    virtual void Logout(AController* Exiting) override;
+
+protected:
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ASGameMode", meta = (AllowPrivateAccess))
+    TArray<TObjectPtr<class ASPlayerController>> AlivePlayerControllers;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ASGameMode", meta = (AllowPrivateAccess))
+    TArray<TObjectPtr<class ASPlayerController>> DeadPlayerControllers;
+
 };
