@@ -65,6 +65,13 @@ void ASGameMode::PostLogin(APlayerController* NewPlayer)
 	Super::PostLogin(NewPlayer);
 	//UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        PostLogin(ASPlayerController)"));
 
+	// 매칭 상태가 Waiting이 아닌 상태에서 접속했다면 바로 죽이기(튕기게 만들기)
+	if (MatchState != EMatchState::Waiting)
+	{
+		NewPlayer->SetLifeSpan(0.1f);
+		return;
+	}
+
 	ASPlayerState* PlayerState = NewPlayer->GetPlayerState<ASPlayerState>();
 	if (true == IsValid(PlayerState))
 	{
@@ -81,6 +88,15 @@ void ASGameMode::PostLogin(APlayerController* NewPlayer)
 
 }
 
+void ASGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// 1.0초마다 한 번씩 OnMainTimerElapsed 호출
+	GetWorld()->GetTimerManager().SetTimer(MainTimerHandle, this, &ThisClass::OnMainTimerElapsed, 1.0f, true);
+	RemainWaitingTimeForPlaying = WaitingTime;
+}
+
 void ASGameMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
@@ -90,6 +106,73 @@ void ASGameMode::Logout(AController* Exiting)
 	{
 		AlivePlayerControllers.Remove(ExitingPlayerController);
 		DeadPlayerControllers.Add(ExitingPlayerController);
+	}
+
+}
+
+void ASGameMode::OnMainTimerElapsed()
+{
+	switch (MatchState)
+	{
+	case EMatchState::None:
+		break;
+	// 다른 플레이어를 기다리는 중일 때
+	case EMatchState::Waiting:
+	{
+		FString NotificationString = FString::Printf(TEXT(""));
+
+		// 플레이어 수가 채워지지 않은, 충족되지 않으면 기다리고 있다는 것을 알려주기 위함
+		if (AlivePlayerControllers.Num() < MinimumPlayerCountForPlaying)
+		{
+			NotificationString = FString::Printf(TEXT("Wait another players for playing."));
+
+			// 최소인원이 안 된다면 대기 시간 초기화
+			RemainWaitingTimeForPlaying = WaitingTime; 
+		}
+		else
+		{
+			NotificationString = FString::Printf(TEXT("Wait %d seconds for playing."), RemainWaitingTimeForPlaying);
+
+			// 접속 되는 만큼 감소
+			--RemainWaitingTimeForPlaying;
+		}
+
+		// 0이 되면 실행
+		if (0 == RemainWaitingTimeForPlaying)
+		{
+			NotificationString = FString::Printf(TEXT(""));
+
+			MatchState = EMatchState::Playing;
+		}
+
+		NotifyToAllPlayer(NotificationString);
+
+		break;
+	}
+	case EMatchState::Playing:
+		break;
+	case EMatchState::Ending:
+		break;
+	case EMatchState::End:
+		break;
+	default:
+		break;
+	}
+
+}
+
+// 플레이어 컨트롤러 마다 노피타이 적용하기 위함
+void ASGameMode::NotifyToAllPlayer(const FString& NotificationString)
+{
+	// 살았어도 죽었어도 동일하게 처리해주기 위함
+	for (auto AlivePlayerController : AlivePlayerControllers)
+	{
+		AlivePlayerController->NotificationText = FText::FromString(NotificationString);
+	}
+
+	for (auto DeadPlayerController : DeadPlayerControllers)
+	{
+		DeadPlayerController->NotificationText = FText::FromString(NotificationString);
 	}
 
 }

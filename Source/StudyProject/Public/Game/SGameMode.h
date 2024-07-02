@@ -46,6 +46,17 @@
 //LogTemp:                 Start ASPlayerPawn::      EndPlay()
 //LogTemp:                 End   ASPlayerPawn::      EndPlay()
 
+UENUM(BlueprintType)
+enum class EMatchState : uint8
+{
+    None,
+    Waiting,
+    Playing,
+    Ending,
+    End,
+
+};
+
 /**
  * 
  */
@@ -69,7 +80,30 @@ public:
 
     virtual void PostLogin(APlayerController* NewPlayer) override;
 
+    virtual void BeginPlay() override;
+
     virtual void Logout(AController* Exiting) override;
+
+private:
+    UFUNCTION()
+    void OnMainTimerElapsed();
+
+    void NotifyToAllPlayer(const FString& NotificationString);
+
+public:
+    // 우선 매칭 상태에서 15초 가량 기다리게 하기 위함
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASGameMode")
+    int32 WaitingTime = 15;
+
+    FTimerHandle MainTimerHandle;
+
+    EMatchState MatchState = EMatchState::Waiting;
+
+    // 플레이 되기 전까지 남은 시간
+    int32 RemainWaitingTimeForPlaying = 15;
+
+    // 최소 필요한 플레이어 수
+    int32 MinimumPlayerCountForPlaying = 2;
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ASGameMode", meta = (AllowPrivateAccess))
