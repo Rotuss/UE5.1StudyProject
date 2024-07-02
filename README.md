@@ -49,4 +49,9 @@
 > Server Test  
 > <img src="Image/Server_Test.gif" height="300" title="ServerTest">  
 > 무기 및 애니메이션(몽타주 노티파이 등) Replicated 적용  
-> Damage Stat 적용 또한 NetMulticast 통해 연산 적용
+> Damage Stat 적용 또한 NetMulticast 통해 연산 적용<br/><br/><br/>     
+> <img src="Image/WaitingTimer1.gif" height="300" title="WaitingTimer1">  
+> 서버 접속 플레이어 1명  
+> <img src="Image/WaitingTimer2.gif" height="300" title="WaitingTimer2">  
+> 서버 접속 플레이어 2명 => 인원 충족으로 playTimer 작동  
+> 하나의 서버로 진입하여 플레이어 카운팅 후 조건 충족 시 타이머 작동(다 되면 게임 플레이로 전환)
