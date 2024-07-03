@@ -5,6 +5,7 @@
 #include "Controller/SPlayerController.h"
 #include "Character/SPlayerPawn.h"
 #include "Game/SPlayerState.h"
+#include "Game/SGameState.h"
 
 ASGameMode::ASGameMode()
 {
@@ -65,8 +66,11 @@ void ASGameMode::PostLogin(APlayerController* NewPlayer)
 	Super::PostLogin(NewPlayer);
 	//UE_LOG(LogTemp, Error, TEXT("         End   ASGameMode::        PostLogin(ASPlayerController)"));
 
+	ASGameState* SGameState = GetGameState<ASGameState>();
+	if (false == SGameState) return;
+
 	// 매칭 상태가 Waiting이 아닌 상태에서 접속했다면 바로 죽이기(튕기게 만들기)
-	if (MatchState != EMatchState::Waiting)
+	if (SGameState->MatchState != EMatchState::Waiting)
 	{
 		NewPlayer->SetLifeSpan(0.1f);
 		return;
@@ -123,7 +127,10 @@ void ASGameMode::OnControllerDead(ASPlayerController* InDeadController)
 
 void ASGameMode::OnMainTimerElapsed()
 {
-	switch (MatchState)
+	ASGameState* SGameState = GetGameState<ASGameState>();
+	if (false == IsValid(SGameState)) return;
+
+	switch (SGameState->MatchState)
 	{
 	case EMatchState::None:
 		break;
@@ -153,7 +160,7 @@ void ASGameMode::OnMainTimerElapsed()
 		{
 			NotificationString = FString::Printf(TEXT(""));
 
-			MatchState = EMatchState::Playing;
+			SGameState->MatchState = EMatchState::Playing;
 		}
 
 		NotifyToAllPlayer(NotificationString);
@@ -162,14 +169,19 @@ void ASGameMode::OnMainTimerElapsed()
 	}
 	case EMatchState::Playing:
 	{
-		FString NotificationString = FString::Printf(TEXT("%d / %d"), AlivePlayerControllers.Num(), AlivePlayerControllers.Num() + DeadPlayerControllers.Num());
-
-		NotifyToAllPlayer(NotificationString);
-
-		// 최후 1인이면 Ending
-		if (1 >= AlivePlayerControllers.Num())
+		if (true == IsValid(SGameState))
 		{
-			MatchState = EMatchState::Ending;
+			SGameState->AlivePlayerControllerCount = AlivePlayerControllers.Num();
+
+			FString NotificationString = FString::Printf(TEXT("%d / %d"), SGameState->AlivePlayerControllerCount, SGameState->AlivePlayerControllerCount + DeadPlayerControllers.Num());
+
+			NotifyToAllPlayer(NotificationString);
+
+			// 최후 1인이면 Ending
+			if (1 >= SGameState->AlivePlayerControllerCount)
+			{
+				SGameState->MatchState = EMatchState::Ending;
+			}
 		}
 
 		break;

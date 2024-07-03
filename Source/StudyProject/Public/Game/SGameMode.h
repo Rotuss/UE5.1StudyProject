@@ -46,17 +46,6 @@
 //LogTemp:                 Start ASPlayerPawn::      EndPlay()
 //LogTemp:                 End   ASPlayerPawn::      EndPlay()
 
-UENUM(BlueprintType)
-enum class EMatchState : uint8
-{
-    None,
-    Waiting,
-    Playing,
-    Ending,
-    End,
-
-};
-
 /**
  * 
  */
@@ -98,8 +87,6 @@ public:
     int32 WaitingTime = 15;
 
     FTimerHandle MainTimerHandle;
-
-    EMatchState MatchState = EMatchState::Waiting;
 
     // 플레이 되기 전까지 남은 시간
     int32 RemainWaitingTimeForPlaying = 15;

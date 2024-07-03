@@ -7,12 +7,14 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/Engine.h"
 #include "Engine/EngineTypes.h"
 #include "Engine/DamageEvents.h"
 #include "Animation/SAnimInstance.h"
 #include "Item/SWeaponActor.h"
+#include "Game/SGameState.h"
 #include "Component/SStatComponent.h"
 #include "Controller/SPlayerController.h"
 
@@ -84,6 +86,13 @@ float ASCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEven
 {
     float FinalDamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
     
+    // Waiting 상태에서는 Damage가 들어가지 않게 하기 위함
+    ASGameState* SGameState = Cast<ASGameState>(UGameplayStatics::GetGameState(this));
+    if (true == IsValid(SGameState) && EMatchState::Playing != SGameState->MatchState)
+    {
+        return FinalDamageAmount;
+    }
+
     //CurrentHP = FMath::Clamp(CurrentHP - FinalDamageAmount, 0.0f, MaxHP);
 
     //// KINDA_SMALL_NUMBER: 0에 가까운 근사치
