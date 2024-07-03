@@ -54,4 +54,8 @@
 > 서버 접속 플레이어 1명  
 > <img src="Image/WaitingTimer2.gif" height="300" title="WaitingTimer2">  
 > 서버 접속 플레이어 2명 => 인원 충족으로 playTimer 작동  
-> 하나의 서버로 진입하여 플레이어 카운팅 후 조건 충족 시 타이머 작동(다 되면 게임 플레이로 전환)
+> 하나의 서버로 진입하여 플레이어 카운팅 후 조건 충족 시 타이머 작동(다 되면 게임 플레이로 전환)<br/><br/><br/>  
+> <img src="Image/MatchWait.gif" height="300" title="MatchWait">  
+> 매치 대기 상태시 대미지 적용X(타이머 소모 전)  
+> <img src="Image/MatchPlay.gif" height="300" title="MatchPlay">  
+> 매치 플레이 상태시 대미지 적용O(타이머 소모 후)
