@@ -14,6 +14,7 @@
 #include "Animation/SAnimInstance.h"
 #include "Item/SWeaponActor.h"
 #include "Component/SStatComponent.h"
+#include "Controller/SPlayerController.h"
 
 int32 ASCharacter::ShowAttackDebug = 0;
 FAutoConsoleVariableRef CVarShowAttackDebug(TEXT("StudyProject.ShowAttackDebug"), ASCharacter::ShowAttackDebug, TEXT(""), ECVF_Cheat);
@@ -227,6 +228,14 @@ void ASCharacter::OnCharacterDeath()
 {
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+    // 컨트롤러를 확인해서 캐릭터가 죽었음을 알림
+    // 캐릭터 -> 컨트롤러 -> 게임모드
+    ASPlayerController* PlayerController = GetController<ASPlayerController>();
+    if (true == IsValid(PlayerController) && true == HasAuthority())
+    {
+        PlayerController->OnOwningCharacterDead();
+    }
 }
 
 void ASCharacter::BeginAttack()

@@ -28,6 +28,8 @@ public:
 
     void ToggleInGameMenu();
 
+    void OnOwningCharacterDead();
+
 protected:
     virtual void SetupInputComponent() override;
 

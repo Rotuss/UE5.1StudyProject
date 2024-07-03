@@ -3,10 +3,12 @@
 
 #include "Controller/SPlayerController.h"
 #include "Game/SPlayerState.h"
+#include "Game/SGameMode.h"
 #include "UI/SHUD.h"
 #include "Blueprint/UserWidget.h"
 #include "Component/SStatComponent.h"
 #include "Character/SCharacter.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/Engine.h"
 
@@ -81,6 +83,16 @@ void ASPlayerController::ToggleInGameMenu()
     }
 
     bIsInGameMenuOn = !bIsInGameMenuOn;
+}
+
+// 내가 소유한 캐릭터가 죽었는지
+void ASPlayerController::OnOwningCharacterDead()
+{
+    ASGameMode* GameMode = Cast<ASGameMode>(UGameplayStatics::GetGameMode(this));
+    // 내가 소유한 캐릭터가 죽었다면 게임모드에게 알리기
+    // 실질적으로 캐릭터가 죽었을 뿐 컨트롤러는 죽지 않았다
+    if (true == HasAuthority() && true == IsValid(GameMode)) GameMode->OnControllerDead(this);
+
 }
 
 void ASPlayerController::SetupInputComponent()

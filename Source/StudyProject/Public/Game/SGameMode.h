@@ -84,6 +84,8 @@ public:
 
     virtual void Logout(AController* Exiting) override;
 
+    void OnControllerDead(class ASPlayerController* InDeadController);
+
 private:
     UFUNCTION()
     void OnMainTimerElapsed();

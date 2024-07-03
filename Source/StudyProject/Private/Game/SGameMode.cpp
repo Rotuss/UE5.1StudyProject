@@ -110,6 +110,17 @@ void ASGameMode::Logout(AController* Exiting)
 
 }
 
+void ASGameMode::OnControllerDead(ASPlayerController* InDeadController)
+{
+	// 해당 컨트롤러가 유효한지 확인, 유효하지 않다면 실행되지 않게 return
+	if (false == IsValid(InDeadController) || INDEX_NONE == AlivePlayerControllers.Find(InDeadController)) return;
+
+	// Alive 빼고 Dead 추가
+	AlivePlayerControllers.Remove(InDeadController);
+	DeadPlayerControllers.Add(InDeadController);
+
+}
+
 void ASGameMode::OnMainTimerElapsed()
 {
 	switch (MatchState)
@@ -150,7 +161,19 @@ void ASGameMode::OnMainTimerElapsed()
 		break;
 	}
 	case EMatchState::Playing:
+	{
+		FString NotificationString = FString::Printf(TEXT("%d / %d"), AlivePlayerControllers.Num(), AlivePlayerControllers.Num() + DeadPlayerControllers.Num());
+
+		NotifyToAllPlayer(NotificationString);
+
+		// 최후 1인이면 Ending
+		if (1 >= AlivePlayerControllers.Num())
+		{
+			MatchState = EMatchState::Ending;
+		}
+
 		break;
+	}
 	case EMatchState::Ending:
 		break;
 	case EMatchState::End:
