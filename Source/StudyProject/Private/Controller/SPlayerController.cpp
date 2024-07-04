@@ -5,10 +5,12 @@
 #include "Game/SPlayerState.h"
 #include "Game/SGameMode.h"
 #include "UI/SHUD.h"
+#include "UI/SGameResultWidget.h"
 #include "Blueprint/UserWidget.h"
 #include "Component/SStatComponent.h"
 #include "Character/SCharacter.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/TextBlock.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/Engine.h"
 
@@ -92,6 +94,55 @@ void ASPlayerController::OnOwningCharacterDead()
     // 내가 소유한 캐릭터가 죽었다면 게임모드에게 알리기
     // 실질적으로 캐릭터가 죽었을 뿐 컨트롤러는 죽지 않았다
     if (true == HasAuthority() && true == IsValid(GameMode)) GameMode->OnControllerDead(this);
+
+}
+
+void ASPlayerController::ShowWinnerUI_Implementation()
+{
+    // 클라일 때
+    if (false == HasAuthority())
+    {
+        if (true == IsValid(WinnerUIClass))
+        {
+            USGameResultWidget* WinnerUI = CreateWidget<USGameResultWidget>(this, WinnerUIClass);
+            if (true == IsValid(WinnerUI))
+            {
+                WinnerUI->AddToViewport(3);
+                // 승자이니까 어차피 1등, 굳이 등수를 구할 필요X
+                WinnerUI->RankingText->SetText(FText::FromString(TEXT("#01")));
+
+                FInputModeUIOnly Mode;
+                Mode.SetWidgetToFocus(WinnerUI->GetCachedWidget());
+                SetInputMode(Mode);
+
+                bShowMouseCursor = true;
+            }
+        }
+    }
+
+}
+
+void ASPlayerController::ShowLooserUI_Implementation(int32 InRanking)
+{
+    if (false == HasAuthority())
+    {
+        if (true == IsValid(LooserUIClass))
+        {
+            USGameResultWidget* LooserUI = CreateWidget<USGameResultWidget>(this, LooserUIClass);
+            if (true == IsValid(LooserUI))
+            {
+                LooserUI->AddToViewport(3);
+                FString RankingString = FString::Printf(TEXT("#%02d"), InRanking);
+                LooserUI->RankingText->SetText(FText::FromString(RankingString));
+
+                FInputModeUIOnly Mode;
+                Mode.SetWidgetToFocus(LooserUI->GetCachedWidget());
+                SetInputMode(Mode);
+
+                bShowMouseCursor = true;
+            }
+        }
+    }
 
 }
 

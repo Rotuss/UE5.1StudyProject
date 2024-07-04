@@ -119,6 +119,9 @@ void ASGameMode::OnControllerDead(ASPlayerController* InDeadController)
 	// 해당 컨트롤러가 유효한지 확인, 유효하지 않다면 실행되지 않게 return
 	if (false == IsValid(InDeadController) || INDEX_NONE == AlivePlayerControllers.Find(InDeadController)) return;
 
+	// 죽었다면 살아있는 컨트롤러의 개수를 파악하여 등수 결정
+	InDeadController->ShowLooserUI(AlivePlayerControllers.Num());
+
 	// Alive 빼고 Dead 추가
 	AlivePlayerControllers.Remove(InDeadController);
 	DeadPlayerControllers.Add(InDeadController);
@@ -181,6 +184,8 @@ void ASGameMode::OnMainTimerElapsed()
 			if (1 >= SGameState->AlivePlayerControllerCount)
 			{
 				SGameState->MatchState = EMatchState::Ending;
+				// 살아있는 컨트롤러는 하나로 0번이기 때문
+				AlivePlayerControllers[0]->ShowWinnerUI();
 			}
 		}
 

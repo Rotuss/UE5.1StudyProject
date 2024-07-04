@@ -30,6 +30,12 @@ public:
 
     void OnOwningCharacterDead();
 
+    UFUNCTION(Client, Reliable)
+    void ShowWinnerUI();
+
+    UFUNCTION(Client, Reliable)
+    void ShowLooserUI(int32 InRanking);
+
 protected:
     virtual void SetupInputComponent() override;
 
@@ -64,6 +70,12 @@ private:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASPlayerController", meta = (AllowPrivateAccess))
     TSubclassOf<UUserWidget> NotificationTextUI;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASPlayerController", meta = (AllowPrivateAccess))
+    TSubclassOf<class USGameResultWidget> WinnerUIClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASPlayerController", meta = (AllowPrivateAccess))
+    TSubclassOf<class USGameResultWidget> LooserUIClass;
 
     bool bIsInGameMenuOn = false;
 
