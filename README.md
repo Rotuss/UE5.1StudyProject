@@ -58,4 +58,6 @@
 > <img src="Image/MatchWait.gif" height="300" title="MatchWait">  
 > 매치 대기 상태시 대미지 적용X(타이머 소모 전)  
 > <img src="Image/MatchPlay.gif" height="300" title="MatchPlay">  
-> 매치 플레이 상태시 대미지 적용O(타이머 소모 후)
+> 매치 플레이 상태시 대미지 적용O(타이머 소모 후)<br/><br/><br/>  
+> <img src="Image/WinnerLooserUI.gif" height="300" title="WinnerLooserUI">  
+> 승패가 결정나면 화면 UI에 결과를 승자 패자와 등수 알림  
