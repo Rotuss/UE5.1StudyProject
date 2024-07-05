@@ -2,6 +2,7 @@
 
 
 #include "Game/SGameMode.h"
+#include "Kismet/GameplayStatics.h"
 #include "Controller/SPlayerController.h"
 #include "Character/SPlayerPawn.h"
 #include "Game/SPlayerState.h"
@@ -217,6 +218,15 @@ void ASGameMode::OnMainTimerElapsed()
 			// 더이상 호출되지 않게 Invalidate
 			MainTimerHandle.Invalidate();
 			
+			// 만약 데디 서버가 게임 세션 서비스들과 연동되어 있다면 레벨을 다시 준비된 뒤 세션 서버한테 알림 => 새로운 플레이어 들어올 수 있음
+			// 그럼 세션 서비스는 새로운 플레이어들에게 데디 서버의 IP 주소를 전달해줘서 접속 유도
+			
+			// 현재 레벨의 이름 가져오기
+			FName CurrentLevelName = FName(UGameplayStatics::GetCurrentLevelName(this));
+			// 가져온 이름으로 레벨을 다시 엶(해당 로직은 서버에서만 돎, 서버PC에서 openlevel를 호출)
+			// FString(TEXT("listen")) => 게임 서버가 연결 준비
+			UGameplayStatics::OpenLevel(this, CurrentLevelName, true, FString(TEXT("listen")));
+
 			// 혹시 모를 일을 예방하고자 return
 			return;
 		}
