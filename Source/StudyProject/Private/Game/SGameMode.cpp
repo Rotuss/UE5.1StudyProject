@@ -99,6 +99,8 @@ void ASGameMode::BeginPlay()
 	// 1.0초마다 한 번씩 OnMainTimerElapsed 호출
 	GetWorld()->GetTimerManager().SetTimer(MainTimerHandle, this, &ThisClass::OnMainTimerElapsed, 1.0f, true);
 	RemainWaitingTimeForPlaying = WaitingTime;
+	RemainWaitingTimeForEnding = EndingTime;
+
 }
 
 void ASGameMode::Logout(AController* Exiting)
@@ -158,8 +160,8 @@ void ASGameMode::OnMainTimerElapsed()
 			--RemainWaitingTimeForPlaying;
 		}
 
-		// 0이 되면 실행
-		if (0 == RemainWaitingTimeForPlaying)
+		// 0보다 작아지면 실행
+		if (0 >= RemainWaitingTimeForPlaying)
 		{
 			NotificationString = FString::Printf(TEXT(""));
 
@@ -192,7 +194,35 @@ void ASGameMode::OnMainTimerElapsed()
 		break;
 	}
 	case EMatchState::Ending:
+	{
+		// 로비로 이동하기까지 남은 시간을 알림
+		FString NotificationString = FString::Printf(TEXT("Waiting %d for returning to lobby."), RemainWaitingTimeForEnding);
+		// 전체에게 뿌리기
+		NotifyToAllPlayer(NotificationString);
+		// 시간 감소
+		--RemainWaitingTimeForEnding;
+
+		if (0 >= RemainWaitingTimeForEnding)
+		{
+			// 생존자 사망자 모두 로비로 보내게 ReturnToLobby
+			for (auto AliveController : AlivePlayerControllers)
+			{
+				AliveController->ReturnToLobby();
+			}
+			for (auto DeadController : DeadPlayerControllers)
+			{
+				DeadController->ReturnToLobby();
+			}
+
+			// 더이상 호출되지 않게 Invalidate
+			MainTimerHandle.Invalidate();
+			
+			// 혹시 모를 일을 예방하고자 return
+			return;
+		}
+
 		break;
+	}
 	case EMatchState::End:
 		break;
 	default:

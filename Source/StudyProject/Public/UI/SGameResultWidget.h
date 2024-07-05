@@ -14,8 +14,18 @@ class STUDYPROJECT_API USGameResultWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	
+protected:
+	virtual void NativeConstruct() override;
+
+private:
+	UFUNCTION()
+	void OnReturnToLobbyButtonClicked();
+
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "USGameResultWidget", meta = (BindWidget))
 	TObjectPtr<class UTextBlock> RankingText;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "USGameResultWidget", meta = (BindWidget))
+	TObjectPtr<class UButton> ReturnToLobbyButton;
 
 };

@@ -36,6 +36,9 @@ public:
     UFUNCTION(Client, Reliable)
     void ShowLooserUI(int32 InRanking);
 
+    UFUNCTION(Client, Reliable)
+    void ReturnToLobby();
+
 protected:
     virtual void SetupInputComponent() override;
 

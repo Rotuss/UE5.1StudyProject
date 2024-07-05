@@ -86,6 +86,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASGameMode")
     int32 WaitingTime = 15;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ASGameMode")
+    int32 EndingTime = 15;
+
     FTimerHandle MainTimerHandle;
 
     // 플레이 되기 전까지 남은 시간
@@ -93,6 +96,9 @@ public:
 
     // 최소 필요한 플레이어 수
     int32 MinimumPlayerCountForPlaying = 2;
+
+    // 강제추방 되기까지의 시간
+    int32 RemainWaitingTimeForEnding = 15;
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ASGameMode", meta = (AllowPrivateAccess))

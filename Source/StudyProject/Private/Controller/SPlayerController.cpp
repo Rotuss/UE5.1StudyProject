@@ -146,6 +146,17 @@ void ASPlayerController::ShowLooserUI_Implementation(int32 InRanking)
 
 }
 
+void ASPlayerController::ReturnToLobby_Implementation()
+{
+    // 서버의 레벨이 변경되는걸 원치 않으므로 클라가 이동해야하므로 조건문으로 처리
+    if (false == HasAuthority())
+    { 
+        // 로비로 이동
+        UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("Loading")), true, FString(TEXT("NextLevel=Lobby?Saved=false")));
+    }
+
+}
+
 void ASPlayerController::SetupInputComponent()
 {
     //UE_LOG(LogTemp, Warning, TEXT("       Start ASPlayerController::SetupInputComponent()"));
